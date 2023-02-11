@@ -51,7 +51,7 @@ public class AfipWSFEClient extends WebServiceGatewaySupport {
 //		SoapActionCallback soapActionCallback = new SoapActionCallback("op=FEParamGetTiposCbte");
 
 		FEParamGetTiposCbteResponse response = (FEParamGetTiposCbteResponse) getWebServiceTemplate()
-				.marshalSendAndReceive(request, null);
+				.marshalSendAndReceive(request, new SoapActionCallback("http://ar.gov.afip.dif.FEV1/FEParamGetTiposCbte"));
 
 		System.out.println(response.getFEParamGetTiposCbteResult().getResultGet());
 		System.out.println(response.getFEParamGetTiposCbteResult().getErrors());
