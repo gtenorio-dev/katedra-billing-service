@@ -1,10 +1,11 @@
 package com.katedra.biller.app.controller;
 
+import com.katedra.biller.app.client.gen.FECAESolicitarResponse;
+import com.katedra.biller.app.client.gen.FECompUltimoAutorizadoResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import com.katedra.biller.app.dto.BillingPayload;
 import com.katedra.biller.app.service.BillerService;
@@ -17,8 +18,13 @@ public class BillerController {
 	private BillerService billerService;
 
 	@PostMapping("/create")
-	public String create(@RequestBody BillingPayload billingPayload) throws Exception {
-		return billerService.create(billingPayload);
+	public ResponseEntity<FECAESolicitarResponse> create(@RequestBody BillingPayload billingPayload) throws Exception {
+		return new ResponseEntity<>(billerService.create(billingPayload), HttpStatus.OK);
+	}
+
+	@GetMapping("/last")
+	public ResponseEntity<FECompUltimoAutorizadoResponse> last(@RequestParam Long cuit) throws Exception {
+		return new ResponseEntity<>(billerService.getUltimoComprobanteAutorizado(cuit), HttpStatus.OK);
 	}
 	
 }

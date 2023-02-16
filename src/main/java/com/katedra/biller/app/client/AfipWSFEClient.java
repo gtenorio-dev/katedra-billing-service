@@ -1,19 +1,16 @@
 package com.katedra.biller.app.client;
 
+import com.katedra.biller.app.client.gen.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.ws.client.core.support.WebServiceGatewaySupport;
 import org.springframework.ws.soap.client.core.SoapActionCallback;
 
-import com.katedra.biller.app.client.gen.FEAuthRequest;
-import com.katedra.biller.app.client.gen.FECAERequest;
-import com.katedra.biller.app.client.gen.FECAESolicitar;
-import com.katedra.biller.app.client.gen.FECAESolicitarResponse;
-import com.katedra.biller.app.client.gen.FECompUltimoAutorizado;
-import com.katedra.biller.app.client.gen.FEParamGetTiposCbte;
-import com.katedra.biller.app.client.gen.FEParamGetTiposCbteResponse;
-
 public class AfipWSFEClient extends WebServiceGatewaySupport {
+
+	@Value("${afip.wsfe.soap.action}")
+	private String soapAction;
 
 	private static final Logger logger = LoggerFactory.getLogger(AfipWSFEClient.class);
 
@@ -23,39 +20,38 @@ public class AfipWSFEClient extends WebServiceGatewaySupport {
 		request.setAuth(feAuthRequest);
 		request.setFeCAEReq(feCAERequest);
 
-		logger.info("FECAESolicitar Request: ".concat(request.toString()));
+		logger.info("Calling to FECAESolicitar");
+
+		System.out.println("SOAP ACTION: ".concat(soapAction.concat(request.getClass().getSimpleName())));
 
 		FECAESolicitarResponse response = (FECAESolicitarResponse) getWebServiceTemplate()
-				.marshalSendAndReceive(request);
-
+				.marshalSendAndReceive(request, new SoapActionCallback(soapAction.concat("FECAESolicitar")));
 		return response;
 	}
 
-	public void feCompUltimoAutorizado(FEAuthRequest feAuthRequest) {
+	public FECompUltimoAutorizadoResponse feCompUltimoAutorizado(FEAuthRequest feAuthRequest, int ptoVenta, int cbteTipo) {
 
 		FECompUltimoAutorizado request = new FECompUltimoAutorizado();
 		request.setAuth(feAuthRequest);
-		request.setPtoVta(2);
-		request.setCbteTipo(0);
+		request.setPtoVta(ptoVenta);
+		request.setCbteTipo(cbteTipo);
+
+		logger.info("Calling to FECompUltimoAutorizado");
+
+		return (FECompUltimoAutorizadoResponse) getWebServiceTemplate()
+				.marshalSendAndReceive(request, new SoapActionCallback(soapAction.concat("FECompUltimoAutorizado")));
 
 	}
 
-	public void feParamGetTiposCbte(FEAuthRequest feAuthRequest) {
+	public FEParamGetTiposCbteResponse feParamGetTiposCbte(FEAuthRequest feAuthRequest) {
 		FEParamGetTiposCbte request = new FEParamGetTiposCbte();
 		request.setAuth(feAuthRequest);
 
-		logger.info("FEParamGetTiposCbte Request: ".concat(request.toString()));
+		logger.info("Calling to FEParamGetTiposCbte");
+		System.out.println("SOAP ACTION: ".concat(soapAction.concat(request.getClass().getSimpleName())));
 
-		// https://stackoverflow.com/questions/14571273/spring-ws-client-not-setting-soapaction-header
-
-//		SoapActionCallback soapActionCallback = new SoapActionCallback("op=FEParamGetTiposCbte");
-
-		FEParamGetTiposCbteResponse response = (FEParamGetTiposCbteResponse) getWebServiceTemplate()
-				.marshalSendAndReceive(request, new SoapActionCallback("http://ar.gov.afip.dif.FEV1/FEParamGetTiposCbte"));
-
-		System.out.println(response.getFEParamGetTiposCbteResult().getResultGet());
-		System.out.println(response.getFEParamGetTiposCbteResult().getErrors());
-		System.out.println(response.getFEParamGetTiposCbteResult().getEvents());
+		return (FEParamGetTiposCbteResponse) getWebServiceTemplate()
+				.marshalSendAndReceive(request, new SoapActionCallback(soapAction.concat("FEParamGetTiposCbte")));
 	}
 
 }
