@@ -14,28 +14,14 @@ public class AfipWSFEClient extends WebServiceGatewaySupport {
 
 	private static final Logger logger = LoggerFactory.getLogger(AfipWSFEClient.class);
 
-	public FECAESolicitarResponse feCAESolicitar(FEAuthRequest feAuthRequest, FECAERequest feCAERequest) {
-
-		FECAESolicitar request = new FECAESolicitar();
-		request.setAuth(feAuthRequest);
-		request.setFeCAEReq(feCAERequest);
-
+	public FECAESolicitarResponse feCAESolicitar(FECAESolicitar request) {
 		logger.info("Calling to FECAESolicitar");
 
-		System.out.println("SOAP ACTION: ".concat(soapAction.concat(request.getClass().getSimpleName())));
-
-		FECAESolicitarResponse response = (FECAESolicitarResponse) getWebServiceTemplate()
+		return (FECAESolicitarResponse) getWebServiceTemplate()
 				.marshalSendAndReceive(request, new SoapActionCallback(soapAction.concat("FECAESolicitar")));
-		return response;
 	}
 
-	public FECompUltimoAutorizadoResponse feCompUltimoAutorizado(FEAuthRequest feAuthRequest, int ptoVenta, int cbteTipo) {
-
-		FECompUltimoAutorizado request = new FECompUltimoAutorizado();
-		request.setAuth(feAuthRequest);
-		request.setPtoVta(ptoVenta);
-		request.setCbteTipo(cbteTipo);
-
+	public FECompUltimoAutorizadoResponse feCompUltimoAutorizado(FECompUltimoAutorizado request) {
 		logger.info("Calling to FECompUltimoAutorizado");
 
 		return (FECompUltimoAutorizadoResponse) getWebServiceTemplate()
@@ -43,15 +29,11 @@ public class AfipWSFEClient extends WebServiceGatewaySupport {
 
 	}
 
-	public FEParamGetTiposCbteResponse feParamGetTiposCbte(FEAuthRequest feAuthRequest) {
-		FEParamGetTiposCbte request = new FEParamGetTiposCbte();
-		request.setAuth(feAuthRequest);
-
+	public FEParamGetTiposCbteResponse feParamGetTiposCbte(FEParamGetTiposCbte request) {
 		logger.info("Calling to FEParamGetTiposCbte");
-		System.out.println("SOAP ACTION: ".concat(soapAction.concat(request.getClass().getSimpleName())));
 
 		return (FEParamGetTiposCbteResponse) getWebServiceTemplate()
-				.marshalSendAndReceive(request, new SoapActionCallback(soapAction.concat("FEParamGetTiposCbte")));
+				.marshalSendAndReceive(request, new SoapActionCallback(soapAction.concat(request.getClass().getSimpleName())));
 	}
 
 }

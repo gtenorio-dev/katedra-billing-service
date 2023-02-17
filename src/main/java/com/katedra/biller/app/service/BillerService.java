@@ -1,17 +1,17 @@
 package com.katedra.biller.app.service;
 
-import com.katedra.biller.app.client.gen.FEAuthRequest;
-import com.katedra.biller.app.client.gen.FECAESolicitarResponse;
-import com.katedra.biller.app.client.gen.FECompUltimoAutorizadoResponse;
-import com.katedra.biller.app.client.gen.FEParamGetTiposCbteResponse;
+import com.katedra.biller.app.client.gen.*;
+import com.katedra.biller.app.dto.BillDetailDTO;
 import com.katedra.biller.app.dto.BillingPayload;
 import com.katedra.biller.app.model.TicketAccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -25,12 +25,28 @@ public class BillerService {
 
     @Autowired
     private AfipWSAAService wsaaService;
-
     @Autowired
     private AfipWSFEService wsfeService;
+    @Value("${afip.billing.concepto}")
+    private int concepto;
+    @Value("${afip.billing.cbteTipo}")
+    private int cbteTipo;
+    @Value("${afip.billing.docTipo}")
+    private int docTipo;
+    @Value("${afip.billing.impTotConc}")
+    private int impTotConc;
+    @Value("${afip.billing.impOpEx}")
+    private int impOpEx;
+    @Value("${afip.billing.impIVA}")
+    private int impIVA;
+    @Value("${afip.billing.monId}")
+    private String monId;
+    @Value("${afip.billing.monCotiz}")
+    private int monCotiz;
+
 
     public FECAESolicitarResponse create(BillingPayload billingPayload) throws Exception {
-        return wsfeService.generateBill(getFEAuthRequest(billingPayload.getCuit()));
+        return wsfeService.generateBill(getFEAuthRequest(billingPayload.getCuit()), buildBillRequest(billingPayload));
     }
 
     public FECompUltimoAutorizadoResponse getUltimoComprobanteAutorizado(Long cuit) throws Exception {
@@ -77,4 +93,63 @@ public class BillerService {
         return authRequest;
     }
 
+
+    private FECAERequest buildBillRequest(BillingPayload billingPayload) throws Exception {
+        FECAERequest fecaeRequest = new FECAERequest();
+
+        // TODO consultar en DB datos del emisor
+        int ptoVenta = 2;
+
+        int catRegistros = billingPayload.getDetails().size();
+
+        ArrayOfFECAEDetRequest arrayOfFECAEDetRequest = new ArrayOfFECAEDetRequest();
+        List<FECAEDetRequest> fecaeDetRequests = arrayOfFECAEDetRequest.getFECAEDetRequest();
+
+        int ultimoComprobanteAutorizado = wsfeService
+                .getUltimoComprobanteAutorizado(getFEAuthRequest(billingPayload.getCuit()), ptoVenta, cbteTipo)
+                .getFECompUltimoAutorizadoResult().getCbteNro();
+
+        for (BillDetailDTO detail: billingPayload.getDetails()) {
+            FECAEDetRequest detRequest = buildDetails(detail, ptoVenta, ++ultimoComprobanteAutorizado);
+            fecaeDetRequests.add(detRequest);
+        }
+
+        fecaeRequest.setFeDetReq(arrayOfFECAEDetRequest);
+        fecaeRequest.setFeCabReq(buildHeader(ptoVenta, fecaeDetRequests.size()));
+        return fecaeRequest;
+    }
+
+    private FECAECabRequest buildHeader(int ptoVenta, int cantReg) {
+        FECAECabRequest fecaeCabRequest = new FECAECabRequest();
+        fecaeCabRequest.setPtoVta(ptoVenta); // Punto de venta 2
+        fecaeCabRequest.setCbteTipo(cbteTipo); // Factura C - Monotributo
+        fecaeCabRequest.setCantReg(cantReg); // Cantidad de productos a facturar
+        return fecaeCabRequest;
+    }
+
+    private FECAEDetRequest buildDetails(BillDetailDTO detail, int ptoVenta, int numComprobante) throws Exception {
+        // Generate Details
+        FECAEDetRequest feCAEDetRequest = new FECAEDetRequest();
+        feCAEDetRequest.setConcepto(concepto); // Productos y servicios = 3
+        feCAEDetRequest.setDocTipo(docTipo); // Tipo DNI = 96
+        feCAEDetRequest.setDocNro(detail.getDniComprador()); // Numero de DNI del comprador
+
+        feCAEDetRequest.setCbteDesde(numComprobante);
+        feCAEDetRequest.setCbteHasta(numComprobante);
+        feCAEDetRequest.setCbteFch("20230217"); // Formato yyyymmdd
+
+        feCAEDetRequest.setImpTotal(detail.getImporte());
+        feCAEDetRequest.setImpNeto(detail.getImporte()); // Para factura C = impTotal
+        feCAEDetRequest.setImpTotConc(0); // Para factura C = 0
+        feCAEDetRequest.setImpOpEx(0); // Para factura C = 0
+        feCAEDetRequest.setImpIVA(0); // Para factura C = 0
+
+        feCAEDetRequest.setFchServDesde(detail.getFchServDesde());
+        feCAEDetRequest.setFchServHasta(detail.getFchServHasta());
+        feCAEDetRequest.setFchVtoPago(detail.getFchVtoPago());
+        feCAEDetRequest.setMonId(monId); // Pesos Argentinos = PES
+        feCAEDetRequest.setMonCotiz(monCotiz); // Para ARS = 1
+
+        return feCAEDetRequest;
+    }
 }
