@@ -24,7 +24,7 @@ public class BillerController {
 			{
 				"dniComprador" : 19003022,
 				"fchServDesde" : "20230217",
-				"fchServHasta" : "20220217",
+				"fchServHasta" : "20230217",
 				"fchVtoPago" : "20230217",
 				"importe" : 1000
 			},
