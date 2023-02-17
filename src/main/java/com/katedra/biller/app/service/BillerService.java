@@ -140,9 +140,9 @@ public class BillerService {
 
         feCAEDetRequest.setImpTotal(detail.getImporte());
         feCAEDetRequest.setImpNeto(detail.getImporte()); // Para factura C = impTotal
-        feCAEDetRequest.setImpTotConc(0); // Para factura C = 0
-        feCAEDetRequest.setImpOpEx(0); // Para factura C = 0
-        feCAEDetRequest.setImpIVA(0); // Para factura C = 0
+        feCAEDetRequest.setImpTotConc(impTotConc); // Para factura C = 0
+        feCAEDetRequest.setImpOpEx(impOpEx); // Para factura C = 0
+        feCAEDetRequest.setImpIVA(impIVA); // Para factura C = 0
 
         feCAEDetRequest.setFchServDesde(detail.getFchServDesde());
         feCAEDetRequest.setFchServHasta(detail.getFchServHasta());
