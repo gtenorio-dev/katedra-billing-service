@@ -19,6 +19,10 @@ public class BillerService {
 
     private static final Logger logger = LoggerFactory.getLogger(BillerService.class);
 
+    private static final String APROBADO = "A";
+    private static final String RECHAZADO = "R";
+    private static final String PARCIAL = "P";
+
     @Autowired
     @Qualifier("authentications")
     Map<Long, TicketAccess> authentications;
@@ -46,7 +50,40 @@ public class BillerService {
 
 
     public FECAESolicitarResponse create(BillingPayload billingPayload) throws Exception {
+        FECAESolicitarResponse fecaeSolicitarResponse = wsfeService.generateBill(getFEAuthRequest(billingPayload.getCuit()), buildBillRequest(billingPayload));
+
+        // TODO Split response
+
+        validateBill(fecaeSolicitarResponse.getFECAESolicitarResult());
+
+
         return wsfeService.generateBill(getFEAuthRequest(billingPayload.getCuit()), buildBillRequest(billingPayload));
+    }
+
+    private boolean validateBill(FECAEResponse res) {
+        String errorMessage = "";
+
+        switch (res.getFeCabResp().getResultado()) {
+            case APROBADO:
+                logger.info("APROBADO");
+                break;
+            case RECHAZADO:
+                logger.info("RECHAZADO");
+                errorMessage = buildErrorMessage(res.getErrors().getErr());
+                break;
+            case PARCIAL:
+                logger.info("PARCIAL");
+                break;
+        }
+
+
+        return false;
+    }
+
+    private String buildErrorMessage(List<Err> errors) {
+        StringBuilder errorMessages = new StringBuilder();
+        errors.forEach(err -> errorMessages.append(String.valueOf(err.getCode()).concat(" - ").concat(err.getMsg())));
+        return errorMessages.toString();
     }
 
     public FECompUltimoAutorizadoResponse getUltimoComprobanteAutorizado(Long cuit) throws Exception {
@@ -109,7 +146,7 @@ public class BillerService {
                 .getUltimoComprobanteAutorizado(getFEAuthRequest(billingPayload.getCuit()), ptoVenta, cbteTipo)
                 .getFECompUltimoAutorizadoResult().getCbteNro();
 
-        for (BillDetailDTO detail: billingPayload.getDetails()) {
+        for (BillDetailDTO detail : billingPayload.getDetails()) {
             FECAEDetRequest detRequest = buildDetails(detail, ptoVenta, ++ultimoComprobanteAutorizado);
             fecaeDetRequests.add(detRequest);
         }

@@ -15,6 +15,8 @@ public class Bill {
     private String comprobanteFecha; // yyyymmdd
     private String cae;
     private String caeFechaVto;
+    private String estado;
+    private String mensaje;
 
 
 }
