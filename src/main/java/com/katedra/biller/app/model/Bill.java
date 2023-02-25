@@ -4,19 +4,13 @@ package com.katedra.biller.app.model;
 public class Bill {
 
     private Long id;
-    private Long cuit;
-    private Integer puntoVenta;
-    private Long numeroComprobante;
     private String fechaProceso; // yyyymmddHHmmss
-    private Integer cantRegistros;
+    private Long numComprobante;
+    private String fechaComprobante; // yyyymmdd
     private String resultado; // Aprobado = A ; Parcialmente Aprobado = P ; Rechazado = R
-    private String reproceso;
-    private Long dni;
-    private String comprobanteFecha; // yyyymmdd
+    private Long dni; // Del comprador
     private String cae;
     private String caeFechaVto;
-    private String estado;
     private String mensaje;
-
 
 }

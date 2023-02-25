@@ -1,10 +1,15 @@
 package com.katedra.biller.app.model;
 
+import java.util.List;
+
 //@Entity()
-public class AccountConfig {
+public class Account {
 
     private Long id;
     private Long cuit;
     private Integer puntoVenta;
+
+
+    private List<Bill> bills;
 
 }
