@@ -2,12 +2,8 @@ package com.katedra.biller.app.service;
 
 import com.katedra.biller.app.client.AfipWSFEClient;
 import com.katedra.biller.app.client.gen.*;
-import com.katedra.biller.app.dto.BillingPayload;
-import com.katedra.biller.app.model.TicketAccess;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class AfipWSFEService {
