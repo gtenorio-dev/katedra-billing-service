@@ -24,7 +24,4 @@ public class AccountEntity {
     @Column(name = "punto_venta")
     private Integer puntoVenta;
 
-    @OneToMany(mappedBy = "account")
-    private List<BillEntity> bills;
-
 }

@@ -20,13 +20,13 @@ public class BillEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "fecha_proceso")
+    @Column(name = "proceso_fecha")
     private String fechaProceso; // yyyymmddHHmmss
 
-    @Column(name = "num_comprobante")
+    @Column(name = "comprobante_num")
     private Long numComprobante;
 
-    @Column(name = "fecha_comprobante")
+    @Column(name = "comprobante_fecha")
     private String fechaComprobante; // yyyymmdd
 
     private String resultado; // Aprobado = A ; Parcialmente Aprobado = P ; Rechazado = R
@@ -41,7 +41,6 @@ public class BillEntity {
     private String mensaje;
 
     @ManyToOne
-    @JoinColumn(name = "account_id", nullable = false)
-    private BillEntity bill;
+    private AccountEntity account;
 
 }
