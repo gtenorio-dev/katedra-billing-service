@@ -45,7 +45,7 @@ public class AfipWSAAService {
 	@Value("${afip.wsaa.ticket-time}")
 	private Long ticketTime;
 
-	public void authenticate(TicketAccess ta) throws Exception {
+	public TicketAccess authenticate(TicketAccess ta) throws Exception {
 		byte[] LoginTicketRequest_xml_cms = null;
 		try {
 			LoginTicketRequest_xml_cms = AfipWSAAUtils.create_cms(p12file, p12pass, signer, dstDN, service, ticketTime);
@@ -83,6 +83,8 @@ public class AfipWSAAService {
 			logger.error(e.getMessage());
 			throw new Exception("Error extrayendo el Ticket de Acceso (TA)");
 		}
+
+		return ta;
 	}
 
 }

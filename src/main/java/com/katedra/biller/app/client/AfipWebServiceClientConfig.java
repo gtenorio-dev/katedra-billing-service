@@ -52,11 +52,11 @@ public class AfipWebServiceClientConfig {
         return client;
 	}
 	
-	@Bean
-	@Qualifier("authentications")
-	public Map<Long, TicketAccess> authentications(){
-		Map<Long, TicketAccess> auths = new HashMap<>();
-		cuits.forEach(c -> auths.put(c, new TicketAccess()));
-		return auths;
-	}
+//	@Bean
+//	@Qualifier("authentications")
+//	public Map<Long, TicketAccess> authentications(){
+//		Map<Long, TicketAccess> auths = new HashMap<>();
+//		cuits.forEach(c -> auths.put(c, new TicketAccess()));
+//		return auths;
+//	}
 }

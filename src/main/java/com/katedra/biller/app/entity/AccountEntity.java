@@ -20,8 +20,16 @@ public class AccountEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true)
     private Long cuit;
-    @Column(name = "punto_venta")
+    @Column(name = "punto_venta", nullable = false)
     private Integer puntoVenta;
+
+    @Column(name = "sesion_clave", length = 2000)
+    private String token;
+    @Column(name = "sesion_firma")
+    private String sign;
+    @Column(name = "sesion_expiracion")
+    private String expirationTime;
 
 }

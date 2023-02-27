@@ -3,6 +3,7 @@ package com.katedra.biller.app.service;
 import com.katedra.biller.app.client.gen.*;
 import com.katedra.biller.app.dto.BillDetailDTO;
 import com.katedra.biller.app.dto.BillingPayload;
+import com.katedra.biller.app.entity.AccountEntity;
 import com.katedra.biller.app.model.TicketAccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +12,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -23,14 +28,16 @@ public class BillerService {
     private static final String RECHAZADO = "R";
     private static final String PARCIAL = "P";
 
-    @Autowired
-    @Qualifier("authentications")
-    Map<Long, TicketAccess> authentications;
+//    @Autowired
+//    @Qualifier("authentications")
+//    Map<Long, TicketAccess> authentications;
 
     @Autowired
     private AfipWSAAService wsaaService;
     @Autowired
     private AfipWSFEService wsfeService;
+    @Autowired
+    private AccountService accountService;
     @Value("${afip.billing.concepto}")
     private int concepto;
     @Value("${afip.billing.cbteTipo}")
@@ -50,14 +57,18 @@ public class BillerService {
 
 
     public FECAESolicitarResponse create(BillingPayload billingPayload) throws Exception {
-        FECAESolicitarResponse fecaeSolicitarResponse = wsfeService.generateBill(getFEAuthRequest(billingPayload.getCuit()), buildBillRequest(billingPayload));
 
-        // TODO Split response
+        AccountEntity account = accountService.findByCuit(billingPayload.getCuit());
 
-        validateBill(fecaeSolicitarResponse.getFECAESolicitarResult());
+//        FECAESolicitarResponse fecaeSolicitarResponse = wsfeService.generateBill(
+//                getFEAuthRequest(billingPayload.getCuit()), buildBillRequest(billingPayload, account));
+//
+//        // TODO Split response
+//
+//        validateBill(fecaeSolicitarResponse.getFECAESolicitarResult());
 
 
-        return wsfeService.generateBill(getFEAuthRequest(billingPayload.getCuit()), buildBillRequest(billingPayload));
+        return wsfeService.generateBill(getFEAuthRequest(account), buildBillRequest(billingPayload, account));
     }
 
     private boolean validateBill(FECAEResponse res) {
@@ -87,72 +98,72 @@ public class BillerService {
     }
 
     public FECompUltimoAutorizadoResponse getUltimoComprobanteAutorizado(Long cuit) throws Exception {
-        return wsfeService.getUltimoComprobanteAutorizado(getFEAuthRequest(cuit), 2, 11);
+        AccountEntity account = accountService.findByCuit(cuit);
+        return wsfeService.getUltimoComprobanteAutorizado(
+                getFEAuthRequest(account), account.getPuntoVenta(), cbteTipo);
     }
 
 
     /**
      * Devuelve una Autenticacion valida para usar el servicio de Facturacion Electronica
      *
-     * @param cuit
-     * @return
+     * @param account
+     * @return FEAuthRequest
      * @throws Exception
      */
-    private FEAuthRequest getFEAuthRequest(Long cuit) throws Exception {
-        TicketAccess ta = authentications.get(cuit);
-
-        if (ta.getToken() == null) {
-            wsaaService.authenticate(ta);
+    private FEAuthRequest getFEAuthRequest(AccountEntity account) throws Exception {
+        if (account.getExpirationTime() == null) {
+            TicketAccess ta = wsaaService.authenticate(new TicketAccess());
+            account = accountService.updateSession(account, ta);
         } else {
-            // TODO si el tiempo que le queda al TA es corto (menor a 30/60 mins)=> solicitar nuevo TA
-            // TODO Case Validate ExpirationTime < Current Time
-//			DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-//			Date date = df.parse(ta.getExpirationTime());
-//			Calendar expirationDate = Calendar.getInstance();
-//			expirationDate.setTime(date);
-//
-//			//TODO get Current Date
-//			Calendar currentDate = Calendar.getInstance();
+			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+			Date expirationTime = dateFormat.parse(account.getExpirationTime());
+            Date currentDateTime = new Date();
 
-            // Testing Facturacion Electronica
-//			wsfeService.generateBill(ta, billingPayload);
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(expirationTime);
+            calendar.add(Calendar.MINUTE, -10);
+            Date expirationTimeLimit = calendar.getTime();
 
-            System.out.println("---------");
+            if (expirationTime.compareTo(currentDateTime) < 0) {
+                logger.info("Sesion vencida");
+                TicketAccess ta = wsaaService.authenticate(new TicketAccess());
+                account = accountService.updateSession(account, ta);
+            } else if (expirationTimeLimit.compareTo(currentDateTime) < 0) {
+                logger.info("Sesion vence en menos de 10 minutos. Se renueva");
+                TicketAccess ta = wsaaService.authenticate(new TicketAccess());
+                account = accountService.updateSession(account, ta);
+            }
 
             //TODO Exception --> No se puede obtener el Ticket de Acceso
         }
 
         FEAuthRequest authRequest = new FEAuthRequest();
-        authRequest.setCuit(cuit);
-        authRequest.setToken(ta.getToken());
-        authRequest.setSign(ta.getSign());
+        authRequest.setCuit(account.getCuit());
+        authRequest.setToken(account.getToken());
+        authRequest.setSign(account.getSign());
 
         return authRequest;
     }
 
-
-    private FECAERequest buildBillRequest(BillingPayload billingPayload) throws Exception {
+    private FECAERequest buildBillRequest(BillingPayload billingPayload, AccountEntity account) throws Exception {
         FECAERequest fecaeRequest = new FECAERequest();
-
-        // TODO consultar en DB datos del emisor
-        int ptoVenta = 2;
-
-        int catRegistros = billingPayload.getDetails().size();
 
         ArrayOfFECAEDetRequest arrayOfFECAEDetRequest = new ArrayOfFECAEDetRequest();
         List<FECAEDetRequest> fecaeDetRequests = arrayOfFECAEDetRequest.getFECAEDetRequest();
 
         int ultimoComprobanteAutorizado = wsfeService
-                .getUltimoComprobanteAutorizado(getFEAuthRequest(billingPayload.getCuit()), ptoVenta, cbteTipo)
+                .getUltimoComprobanteAutorizado(
+                        getFEAuthRequest(account), account.getPuntoVenta(), cbteTipo)
                 .getFECompUltimoAutorizadoResult().getCbteNro();
 
         for (BillDetailDTO detail : billingPayload.getDetails()) {
-            FECAEDetRequest detRequest = buildDetails(detail, ptoVenta, ++ultimoComprobanteAutorizado);
+            FECAEDetRequest detRequest = buildDetails(detail, account.getPuntoVenta(), ++ultimoComprobanteAutorizado);
             fecaeDetRequests.add(detRequest);
         }
 
         fecaeRequest.setFeDetReq(arrayOfFECAEDetRequest);
-        fecaeRequest.setFeCabReq(buildHeader(ptoVenta, fecaeDetRequests.size()));
+        fecaeRequest.setFeCabReq(buildHeader(account.getPuntoVenta(), fecaeDetRequests.size()));
         return fecaeRequest;
     }
 
