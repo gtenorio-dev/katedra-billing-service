@@ -24,9 +24,6 @@ public class AfipWebServiceClientConfig {
 	@Value("${afip.wsaa.endpoint}")
 	private String wsaaEndpoint;
 
-	@Value("#{'${cuits}'.split(',')}")
-	private List<Long> cuits;
-	
 	@Bean
 	public Jaxb2Marshaller marshaller()  {
 	Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
