@@ -1,6 +1,9 @@
 package com.katedra.biller.app.utils;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Security;
@@ -17,6 +20,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.katedra.biller.app.entity.AccountEntity;
 import com.katedra.biller.app.service.BillerService;
 import org.bouncycastle.cms.CMSProcessable;
 import org.bouncycastle.cms.CMSProcessableByteArray;
@@ -41,9 +45,7 @@ public class AfipWSAAUtils {
 	 * @param TicketTime
 	 * @return byte[] CMS File
 	 */
-	public static byte[] create_cms(String p12file, String p12pass, String signer, String dstDN, String service,
-			Long TicketTime) {
-
+	public static byte[] create_cms(AccountEntity account, String dstDN, String service, Long TicketTime) {
 		PrivateKey pKey = null;
 		X509Certificate pCertificate = null;
 		byte[] asn1_cms = null;
@@ -57,13 +59,14 @@ public class AfipWSAAUtils {
 		try {
 			// Create a keystore using keys from the pkcs#12 p12file
 			KeyStore ks = KeyStore.getInstance("pkcs12");
-			FileInputStream p12stream = new FileInputStream(p12file);
-			ks.load(p12stream, p12pass.toCharArray());
+			FileInputStream p12stream = new FileInputStream(
+					AfipWSAAUtils.class.getClassLoader().getResource(account.getCertName()).getPath());
+			ks.load(p12stream, account.getCertPassword().toCharArray());
 			p12stream.close();
 
 			// Get Certificate & Private key from KeyStore
-			pKey = (PrivateKey) ks.getKey(signer, p12pass.toCharArray());
-			pCertificate = (X509Certificate) ks.getCertificate(signer);
+			pKey = (PrivateKey) ks.getKey(account.getCertSigner(), account.getCertPassword().toCharArray());
+			pCertificate = (X509Certificate) ks.getCertificate(account.getCertSigner());
 			SignerDN = pCertificate.getSubjectDN().toString();
 
 			// Create a list of Certificates to include in the final CMS
@@ -112,8 +115,7 @@ public class AfipWSAAUtils {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
-		return (asn1_cms);
+		return asn1_cms;
 	}
 
 	/**

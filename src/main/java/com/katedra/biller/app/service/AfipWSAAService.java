@@ -5,6 +5,7 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.katedra.biller.app.entity.AccountEntity;
 import org.apache.axis.encoding.Base64;
 import org.dom4j.Document;
 import org.dom4j.io.SAXReader;
@@ -32,23 +33,24 @@ public class AfipWSAAService {
 
 	@Value("${afip.wsaa.dstdn}")
 	private String dstDN;
-
-	@Value("${afip.wsaa.keystore}")
-	private String p12file;
-
-	@Value("${afip.wsaa.keystore.signer}")
-	private String signer;
-
-	@Value("${afip.wsaa.keystore.password}")
-	private String p12pass;
-
 	@Value("${afip.wsaa.ticket-time}")
 	private Long ticketTime;
 
-	public TicketAccess authenticate(TicketAccess ta) throws Exception {
+//	@Value("${afip.wsaa.keystore}")
+//	private String p12file;
+
+//	@Value("${afip.wsaa.keystore.signer}")
+//	private String signer;
+
+//	@Value("${afip.wsaa.keystore.password}")
+//	private String p12pass;
+
+
+	public TicketAccess authenticate(AccountEntity account) throws Exception {
+		TicketAccess ta = new TicketAccess();
 		byte[] LoginTicketRequest_xml_cms = null;
 		try {
-			LoginTicketRequest_xml_cms = AfipWSAAUtils.create_cms(p12file, p12pass, signer, dstDN, service, ticketTime);
+			LoginTicketRequest_xml_cms = AfipWSAAUtils.create_cms(account, dstDN, service, ticketTime);
 		} catch (Exception e) {
 			logger.error(e.getMessage());
 			throw new Exception("Error generando el Login Ticket Request XML CMS", e);

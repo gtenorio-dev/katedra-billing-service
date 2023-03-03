@@ -31,5 +31,11 @@ public class AccountEntity {
     private String sign;
     @Column(name = "sesion_expiracion")
     private String expirationTime;
+    @Column(name = "cert_name", nullable = false)
+    private String certName;
+    @Column(name = "cert_signer", nullable = false)
+    private String certSigner;
+    @Column(name = "cert_password", nullable = false)
+    private String certPassword;
 
 }

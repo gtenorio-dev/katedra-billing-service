@@ -132,7 +132,7 @@ public class BillerService {
      */
     private FEAuthRequest getFEAuthRequest(AccountEntity account) throws Exception {
         if (account.getExpirationTime() == null) {
-            TicketAccess ta = wsaaService.authenticate(new TicketAccess());
+            TicketAccess ta = wsaaService.authenticate(account);
             account = accountService.updateSession(account, ta);
         } else {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
@@ -146,11 +146,11 @@ public class BillerService {
 
             if (expirationTime.compareTo(currentDateTime) < 0) {
                 logger.info("Sesion vencida. Se obtiene una nueva");
-                TicketAccess ta = wsaaService.authenticate(new TicketAccess());
+                TicketAccess ta = wsaaService.authenticate(account);
                 account = accountService.updateSession(account, ta);
             } else if (expirationTimeLimit.compareTo(currentDateTime) < 0) {
                 logger.info("La sesion vence en menos de 10 minutos. Se obtiene una nueva");
-                TicketAccess ta = wsaaService.authenticate(new TicketAccess());
+                TicketAccess ta = wsaaService.authenticate(account);
                 account = accountService.updateSession(account, ta);
             }
         }
