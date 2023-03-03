@@ -4,7 +4,9 @@ import com.katedra.biller.app.client.gen.*;
 import com.katedra.biller.app.dto.BillDetailDTO;
 import com.katedra.biller.app.dto.BillingPayload;
 import com.katedra.biller.app.entity.AccountEntity;
+import com.katedra.biller.app.entity.BillEntity;
 import com.katedra.biller.app.model.TicketAccess;
+import com.katedra.biller.app.repository.BillRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,20 +26,6 @@ public class BillerService {
 
     private static final Logger logger = LoggerFactory.getLogger(BillerService.class);
 
-    private static final String APROBADO = "A";
-    private static final String RECHAZADO = "R";
-    private static final String PARCIAL = "P";
-
-//    @Autowired
-//    @Qualifier("authentications")
-//    Map<Long, TicketAccess> authentications;
-
-    @Autowired
-    private AfipWSAAService wsaaService;
-    @Autowired
-    private AfipWSFEService wsfeService;
-    @Autowired
-    private AccountService accountService;
     @Value("${afip.billing.concepto}")
     private int concepto;
     @Value("${afip.billing.cbteTipo}")
@@ -55,40 +43,71 @@ public class BillerService {
     @Value("${afip.billing.monCotiz}")
     private int monCotiz;
 
+    private static final String APROBADO = "A";
+    private static final String RECHAZADO = "R";
+    private static final String PARCIAL = "P";
+
+    @Autowired
+    private AfipWSAAService wsaaService;
+    @Autowired
+    private AfipWSFEService wsfeService;
+    @Autowired
+    private AccountService accountService;
+
+    @Autowired
+    private BillRepository billRepository;
 
     public FECAESolicitarResponse create(BillingPayload billingPayload) throws Exception {
-
         AccountEntity account = accountService.findByCuit(billingPayload.getCuit());
+        FECAESolicitarResponse fecaeSolicitarResponse = wsfeService.generateBill(
+                getFEAuthRequest(account), buildBillRequest(billingPayload, account));
 
-//        FECAESolicitarResponse fecaeSolicitarResponse = wsfeService.generateBill(
-//                getFEAuthRequest(billingPayload.getCuit()), buildBillRequest(billingPayload, account));
-//
-//        // TODO Split response
-//
-//        validateBill(fecaeSolicitarResponse.getFECAESolicitarResult());
+        validateBill(account, fecaeSolicitarResponse.getFECAESolicitarResult(), billingPayload);
 
-
-        return wsfeService.generateBill(getFEAuthRequest(account), buildBillRequest(billingPayload, account));
+        return fecaeSolicitarResponse;
     }
 
-    private boolean validateBill(FECAEResponse res) {
-        String errorMessage = "";
-
+    private void validateBill(AccountEntity account, FECAEResponse res, BillingPayload billingPayload) {
         switch (res.getFeCabResp().getResultado()) {
             case APROBADO:
                 logger.info("APROBADO");
+                res.getFeDetResp().getFECAEDetResponse().forEach(item -> {
+                    saveBill(item, res.getFeCabResp().getFchProceso(), account);
+                });
                 break;
             case RECHAZADO:
                 logger.info("RECHAZADO");
-                errorMessage = buildErrorMessage(res.getErrors().getErr());
                 break;
             case PARCIAL:
                 logger.info("PARCIAL");
+                res.getFeDetResp().getFECAEDetResponse().forEach(item -> {
+                    if ("A".equals(item.getResultado())) saveBill(item, res.getFeCabResp().getFchProceso(), account);
+                });
                 break;
         }
+    }
 
+    private void saveBill(FECAEDetResponse item, String fchProceso, AccountEntity account) {
+        BillEntity bill = new BillEntity();
+        bill.setFechaProceso(fchProceso);
+        bill.setNumComprobante(item.getCbteDesde());
+        bill.setFechaComprobante(item.getCbteFch());
+        bill.setResultado(item.getResultado());
+        bill.setDni(item.getDocNro());
+        bill.setCae(item.getCAE());
+        bill.setCaeFechaVto(item.getCAEFchVto());
+        bill.setAccount(account);
+        billRepository.save(bill);
+        logger.info("CUIT del facturador: ".concat(account.getCuit().toString())
+                .concat(" - Se genero con exito la factura con id ").concat(bill.getId().toString())
+                .concat(" y CAE ").concat(bill.getCae()));
+    }
 
-        return false;
+    private String buildItemErrorMessage(List<Obs> obs) {
+        StringBuilder errorMessages = new StringBuilder();
+        obs.forEach(ob -> errorMessages.append(String.valueOf(
+                ob.getCode()).concat(" - ").concat(ob.getMsg()).concat("\n")));
+        return errorMessages.toString();
     }
 
     private String buildErrorMessage(List<Err> errors) {
@@ -116,8 +135,8 @@ public class BillerService {
             TicketAccess ta = wsaaService.authenticate(new TicketAccess());
             account = accountService.updateSession(account, ta);
         } else {
-			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-			Date expirationTime = dateFormat.parse(account.getExpirationTime());
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+            Date expirationTime = dateFormat.parse(account.getExpirationTime());
             Date currentDateTime = new Date();
 
             Calendar calendar = Calendar.getInstance();
@@ -126,18 +145,15 @@ public class BillerService {
             Date expirationTimeLimit = calendar.getTime();
 
             if (expirationTime.compareTo(currentDateTime) < 0) {
-                logger.info("Sesion vencida");
+                logger.info("Sesion vencida. Se obtiene una nueva");
                 TicketAccess ta = wsaaService.authenticate(new TicketAccess());
                 account = accountService.updateSession(account, ta);
             } else if (expirationTimeLimit.compareTo(currentDateTime) < 0) {
-                logger.info("Sesion vence en menos de 10 minutos. Se renueva");
+                logger.info("La sesion vence en menos de 10 minutos. Se obtiene una nueva");
                 TicketAccess ta = wsaaService.authenticate(new TicketAccess());
                 account = accountService.updateSession(account, ta);
             }
-
-            //TODO Exception --> No se puede obtener el Ticket de Acceso
         }
-
         FEAuthRequest authRequest = new FEAuthRequest();
         authRequest.setCuit(account.getCuit());
         authRequest.setToken(account.getToken());
@@ -184,7 +200,9 @@ public class BillerService {
 
         feCAEDetRequest.setCbteDesde(numComprobante);
         feCAEDetRequest.setCbteHasta(numComprobante);
-        feCAEDetRequest.setCbteFch("20230217"); // Formato yyyymmdd
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+        feCAEDetRequest.setCbteFch(dateFormat.format(new Date())); // Formato yyyymmdd
 
         feCAEDetRequest.setImpTotal(detail.getImporte());
         feCAEDetRequest.setImpNeto(detail.getImporte()); // Para factura C = impTotal

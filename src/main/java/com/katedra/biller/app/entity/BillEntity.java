@@ -24,7 +24,7 @@ public class BillEntity {
     private String fechaProceso; // yyyymmddHHmmss
 
     @Column(name = "comprobante_num")
-    private Long numComprobante;
+    private Long numComprobante; // yyyymmddHHmmss
 
     @Column(name = "comprobante_fecha")
     private String fechaComprobante; // yyyymmdd

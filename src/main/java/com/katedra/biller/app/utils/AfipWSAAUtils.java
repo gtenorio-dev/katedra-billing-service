@@ -7,6 +7,8 @@ import java.security.Security;
 import java.security.cert.CertStore;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.X509Certificate;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -15,13 +17,18 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.katedra.biller.app.service.BillerService;
 import org.bouncycastle.cms.CMSProcessable;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AfipWSAAUtils {
+
+	private static final Logger logger = LoggerFactory.getLogger(AfipWSAAUtils.class);
 
 	/**
 	 * Create the CMS Message
@@ -125,13 +132,20 @@ public class AfipWSAAUtils {
 		Date GenTime = new Date();
 		GregorianCalendar gentime = new GregorianCalendar();
 		GregorianCalendar exptime = new GregorianCalendar();
+
 		String UniqueId = new Long(GenTime.getTime() / 1000).toString();
-		
-		exptime.setTime(new Date(GenTime.getTime()+TicketTime));
-		
-		XMLGregorianCalendar XMLGenTime = DatatypeFactory.newInstance().newXMLGregorianCalendar(gentime);
-		XMLGregorianCalendar XMLExpTime = DatatypeFactory.newInstance().newXMLGregorianCalendar(exptime);
-		
+		exptime.setTime(new Date(GenTime.getTime() + TicketTime));
+
+		SimpleDateFormat  dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+
+		dateFormat.setCalendar(gentime);
+		XMLGregorianCalendar XMLGenTime = DatatypeFactory.newInstance().newXMLGregorianCalendar(
+				dateFormat.format(gentime.getTime()));
+
+		dateFormat.setCalendar(exptime);
+		XMLGregorianCalendar XMLExpTime = DatatypeFactory.newInstance().newXMLGregorianCalendar(
+				dateFormat.format(exptime.getTime()));
+
 		LoginTicketRequest_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
 						+"<loginTicketRequest version=\"1.0\">"
 			+"<header>"
@@ -143,8 +157,8 @@ public class AfipWSAAUtils {
 			+"</header>"
 			+"<service>" + service + "</service>"
 			+"</loginTicketRequest>";
-		
-		System.out.println("TRA: " + LoginTicketRequest_xml);
+
+		logger.info("TRA: ".concat(LoginTicketRequest_xml));
 		
 		return (LoginTicketRequest_xml);
 	}
