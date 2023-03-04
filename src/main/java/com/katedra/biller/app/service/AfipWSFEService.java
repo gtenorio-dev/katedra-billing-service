@@ -32,4 +32,10 @@ public class AfipWSFEService {
         return wsfeClient.feCAESolicitar(request);
     }
 
+    public FEParamGetPtosVentaResponse getPuntosVenta(FEAuthRequest authRequest) {
+        FEParamGetPtosVenta request = new FEParamGetPtosVenta();
+        request.setAuth(authRequest);
+        return wsfeClient.feParamGetPtosVenta(request);
+    }
+
 }

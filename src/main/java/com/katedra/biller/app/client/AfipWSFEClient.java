@@ -36,4 +36,10 @@ public class AfipWSFEClient extends WebServiceGatewaySupport {
 				.marshalSendAndReceive(request, new SoapActionCallback(soapAction.concat(request.getClass().getSimpleName())));
 	}
 
+	public FEParamGetPtosVentaResponse feParamGetPtosVenta(FEParamGetPtosVenta request) {
+		logger.info("Calling to FEParamGetPtosVenta");
+		return (FEParamGetPtosVentaResponse) getWebServiceTemplate()
+				.marshalSendAndReceive(request, new SoapActionCallback(soapAction.concat(request.getClass().getSimpleName())));
+	}
+
 }

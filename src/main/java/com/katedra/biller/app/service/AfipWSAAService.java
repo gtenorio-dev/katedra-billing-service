@@ -36,15 +36,6 @@ public class AfipWSAAService {
 	@Value("${afip.wsaa.ticket-time}")
 	private Long ticketTime;
 
-//	@Value("${afip.wsaa.keystore}")
-//	private String p12file;
-
-//	@Value("${afip.wsaa.keystore.signer}")
-//	private String signer;
-
-//	@Value("${afip.wsaa.keystore.password}")
-//	private String p12pass;
-
 
 	public TicketAccess authenticate(AccountEntity account) throws Exception {
 		TicketAccess ta = new TicketAccess();

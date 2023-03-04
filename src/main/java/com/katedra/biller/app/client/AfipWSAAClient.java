@@ -16,10 +16,8 @@ public class AfipWSAAClient extends WebServiceGatewaySupport {
 		request.setIn0(value);
 		
 		logger.info("LoginCms Request: ".concat(request.toString()));
-		
-		LoginCmsResponse response  = (LoginCmsResponse) getWebServiceTemplate().marshalSendAndReceive(request);
-		
-		return response;
+
+		return (LoginCmsResponse) getWebServiceTemplate().marshalSendAndReceive(request);
 	}
 	
 }

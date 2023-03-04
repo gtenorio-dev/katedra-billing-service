@@ -67,6 +67,17 @@ public class BillerService {
         return fecaeSolicitarResponse;
     }
 
+    public FECompUltimoAutorizadoResponse getUltimoComprobanteAutorizado(Long cuit) throws Exception {
+        AccountEntity account = accountService.findByCuit(cuit);
+        return wsfeService.getUltimoComprobanteAutorizado(
+                getFEAuthRequest(account), account.getPuntoVenta(), cbteTipo);
+    }
+
+    public FEParamGetPtosVentaResponse getPuntosVenta(Long cuit) throws Exception {
+        AccountEntity account = accountService.findByCuit(cuit);
+        return wsfeService.getPuntosVenta(getFEAuthRequest(account));
+    }
+
     private void validateBill(AccountEntity account, FECAEResponse res, BillingPayload billingPayload) {
         switch (res.getFeCabResp().getResultado()) {
             case APROBADO:
@@ -115,13 +126,6 @@ public class BillerService {
         errors.forEach(err -> errorMessages.append(String.valueOf(err.getCode()).concat(" - ").concat(err.getMsg())));
         return errorMessages.toString();
     }
-
-    public FECompUltimoAutorizadoResponse getUltimoComprobanteAutorizado(Long cuit) throws Exception {
-        AccountEntity account = accountService.findByCuit(cuit);
-        return wsfeService.getUltimoComprobanteAutorizado(
-                getFEAuthRequest(account), account.getPuntoVenta(), cbteTipo);
-    }
-
 
     /**
      * Devuelve una Autenticacion valida para usar el servicio de Facturacion Electronica
@@ -186,7 +190,7 @@ public class BillerService {
     private FECAECabRequest buildHeader(int ptoVenta, int cantReg) {
         FECAECabRequest fecaeCabRequest = new FECAECabRequest();
         fecaeCabRequest.setPtoVta(ptoVenta); // Punto de venta 2
-        fecaeCabRequest.setCbteTipo(cbteTipo); // Factura C - Monotributo
+        fecaeCabRequest.setCbteTipo(cbteTipo); // cbteTipo = 11 = Factura C - Monotributo
         fecaeCabRequest.setCantReg(cantReg); // Cantidad de productos a facturar
         return fecaeCabRequest;
     }
