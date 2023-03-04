@@ -81,7 +81,7 @@ public class BillerService {
             case PARCIAL:
                 logger.info("PARCIAL");
                 res.getFeDetResp().getFECAEDetResponse().forEach(item -> {
-                    if ("A".equals(item.getResultado())) saveBill(item, res.getFeCabResp().getFchProceso(), account);
+                    if (APROBADO.equals(item.getResultado())) saveBill(item, res.getFeCabResp().getFchProceso(), account);
                 });
                 break;
         }

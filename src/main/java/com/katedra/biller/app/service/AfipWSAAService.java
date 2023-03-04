@@ -60,8 +60,8 @@ public class AfipWSAAService {
 		try {
 			response = afipWSAAClient.loginCms(Base64.encode(LoginTicketRequest_xml_cms));
 		} catch (Exception e) {
-			logger.error(e.getMessage());
-			throw new Exception("Error autenticando. ");
+			logger.error("Error autenticando. ".concat(e.getMessage()));
+			throw new Exception(e.getMessage());
 		}
 
 		Map<String, String> authentication = new HashMap<>();
