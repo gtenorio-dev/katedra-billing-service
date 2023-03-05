@@ -1,12 +1,14 @@
 package com.katedra.biller.app.service;
 
 import com.katedra.biller.app.client.gen.*;
+import com.katedra.biller.app.dto.BillDTO;
 import com.katedra.biller.app.dto.BillDetailDTO;
 import com.katedra.biller.app.dto.BillingPayload;
 import com.katedra.biller.app.entity.AccountEntity;
 import com.katedra.biller.app.entity.BillEntity;
 import com.katedra.biller.app.model.TicketAccess;
 import com.katedra.biller.app.repository.BillRepository;
+import com.katedra.biller.app.utils.PDFGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -76,6 +79,28 @@ public class BillerService {
     public FEParamGetPtosVentaResponse getPuntosVenta(Long cuit) throws Exception {
         AccountEntity account = accountService.findByCuit(cuit);
         return wsfeService.getPuntosVenta(getFEAuthRequest(account));
+    }
+
+    public ByteArrayInputStream buildFile(BillDTO billDTO) throws Exception {
+        AccountEntity account = accountService.findByCuit(billDTO.getCuit());
+
+        FECompConsultaReq feCompConsultaReq = new FECompConsultaReq();
+        feCompConsultaReq.setCbteNro(billDTO.getNumComprobante());
+        feCompConsultaReq.setPtoVta(account.getPuntoVenta());
+        feCompConsultaReq.setCbteTipo(cbteTipo);
+
+        FECompConsultarResponse comprobante = wsfeService.getBill(getFEAuthRequest(account), feCompConsultaReq);
+
+        if (comprobante.getFECompConsultarResult().getResultGet() != null) {
+            String fileName = billDTO.getCuit().toString().concat(account.getPuntoVenta().toString())
+                    .concat(billDTO.getNumComprobante().toString());
+            ByteArrayInputStream pdf = PDFGenerator.generate(fileName, comprobante.getFECompConsultarResult().getResultGet());
+//            logger.info("Invoice PDF path: ".concat(tempFile));
+            return pdf;
+        } else {
+            // TODO throw not found exception
+            throw new Exception(buildErrorMessage(comprobante.getFECompConsultarResult().getErrors().getErr()));
+        }
     }
 
     private void validateBill(AccountEntity account, FECAEResponse res, BillingPayload billingPayload) {

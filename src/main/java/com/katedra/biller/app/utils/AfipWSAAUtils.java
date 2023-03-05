@@ -1,16 +1,12 @@
 package com.katedra.biller.app.utils;
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.net.URL;
-import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.CertStore;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.X509Certificate;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,7 +17,6 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import com.katedra.biller.app.entity.AccountEntity;
-import com.katedra.biller.app.service.BillerService;
 import org.bouncycastle.cms.CMSProcessable;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
@@ -36,10 +31,7 @@ public class AfipWSAAUtils {
 
 	/**
 	 * Create the CMS Message
-	 * 
-	 * @param p12file
-	 * @param p12pass
-	 * @param signer
+	 *
 	 * @param dstDN
 	 * @param service
 	 * @param TicketTime

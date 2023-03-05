@@ -16,30 +16,33 @@ public class AfipWSFEClient extends WebServiceGatewaySupport {
 
 	public FECAESolicitarResponse feCAESolicitar(FECAESolicitar request) {
 		logger.info("Calling to FECAESolicitar");
-
-		return (FECAESolicitarResponse) getWebServiceTemplate()
-				.marshalSendAndReceive(request, new SoapActionCallback(soapAction.concat("FECAESolicitar")));
+		return (FECAESolicitarResponse) getWebServiceTemplate().marshalSendAndReceive(
+				request, new SoapActionCallback(soapAction.concat("FECAESolicitar")));
 	}
 
 	public FECompUltimoAutorizadoResponse feCompUltimoAutorizado(FECompUltimoAutorizado request) {
 		logger.info("Calling to FECompUltimoAutorizado");
-
-		return (FECompUltimoAutorizadoResponse) getWebServiceTemplate()
-				.marshalSendAndReceive(request, new SoapActionCallback(soapAction.concat("FECompUltimoAutorizado")));
-
+		return (FECompUltimoAutorizadoResponse) getWebServiceTemplate().marshalSendAndReceive(
+				request, new SoapActionCallback(soapAction.concat("FECompUltimoAutorizado")));
 	}
 
 	public FEParamGetTiposCbteResponse feParamGetTiposCbte(FEParamGetTiposCbte request) {
 		logger.info("Calling to FEParamGetTiposCbte");
 
-		return (FEParamGetTiposCbteResponse) getWebServiceTemplate()
-				.marshalSendAndReceive(request, new SoapActionCallback(soapAction.concat(request.getClass().getSimpleName())));
+		return (FEParamGetTiposCbteResponse) getWebServiceTemplate().marshalSendAndReceive(
+				request, new SoapActionCallback(soapAction.concat(request.getClass().getSimpleName())));
 	}
 
 	public FEParamGetPtosVentaResponse feParamGetPtosVenta(FEParamGetPtosVenta request) {
 		logger.info("Calling to FEParamGetPtosVenta");
-		return (FEParamGetPtosVentaResponse) getWebServiceTemplate()
-				.marshalSendAndReceive(request, new SoapActionCallback(soapAction.concat(request.getClass().getSimpleName())));
+		return (FEParamGetPtosVentaResponse) getWebServiceTemplate().marshalSendAndReceive(
+				request, new SoapActionCallback(soapAction.concat(request.getClass().getSimpleName())));
+	}
+
+	public FECompConsultarResponse feCompConsultar(FECompConsultar request) {
+		logger.info("Calling to FECompConsultar");
+		return (FECompConsultarResponse) getWebServiceTemplate().marshalSendAndReceive(
+				request, new SoapActionCallback(soapAction.concat(request.getClass().getSimpleName())));
 	}
 
 }

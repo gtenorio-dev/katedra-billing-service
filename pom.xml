@@ -139,6 +139,21 @@
 		</dependency>
 		<!-- DB -->
 
+		<!-- PDF -->
+<!--		<dependency>-->
+<!--			<groupId>com.itextpdf</groupId>-->
+<!--			<artifactId>itext7-core</artifactId>-->
+<!--			<version>7.2.4</version>-->
+<!--			<type>pom</type>-->
+<!--		</dependency>-->
+
+		<dependency>
+			<groupId>com.github.librepdf</groupId>
+			<artifactId>openpdf</artifactId>
+			<version>1.3.30</version>
+		</dependency>
+		<!-- PDF -->
+
 	</dependencies>
 
 	<build>
@@ -155,27 +170,27 @@
 					</excludes>
 				</configuration>
 			</plugin>
-			<plugin>
-				<groupId>org.jvnet.jaxb2.maven2</groupId>
-				<artifactId>maven-jaxb2-plugin</artifactId>
-				<version>0.14.0</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>generate</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<schemaLanguage>WSDL</schemaLanguage>
-					<generateDirectory>${project.basedir}/src/main/java</generateDirectory>
-					<generatePackage>com.katedra.biller.app.client.gen</generatePackage>
-					<schemaDirectory>${project.basedir}/src/main/resources/wsdl</schemaDirectory>
-					<schemaIncludes>
-						<include>*.wsdl</include>
-					</schemaIncludes>
-				</configuration>
-			</plugin>
+<!--			<plugin>-->
+<!--				<groupId>org.jvnet.jaxb2.maven2</groupId>-->
+<!--				<artifactId>maven-jaxb2-plugin</artifactId>-->
+<!--				<version>0.14.0</version>-->
+<!--				<executions>-->
+<!--					<execution>-->
+<!--						<goals>-->
+<!--							<goal>generate</goal>-->
+<!--						</goals>-->
+<!--					</execution>-->
+<!--				</executions>-->
+<!--				<configuration>-->
+<!--					<schemaLanguage>WSDL</schemaLanguage>-->
+<!--					<generateDirectory>${project.basedir}/src/main/java</generateDirectory>-->
+<!--					<generatePackage>com.katedra.biller.app.client.gen</generatePackage>-->
+<!--					<schemaDirectory>${project.basedir}/src/main/resources/wsdl</schemaDirectory>-->
+<!--					<schemaIncludes>-->
+<!--						<include>*.wsdl</include>-->
+<!--					</schemaIncludes>-->
+<!--				</configuration>-->
+<!--			</plugin>-->
 		</plugins>
 	</build>
 

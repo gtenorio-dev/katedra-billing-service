@@ -38,4 +38,11 @@ public class AfipWSFEService {
         return wsfeClient.feParamGetPtosVenta(request);
     }
 
+    public FECompConsultarResponse getBill(FEAuthRequest authRequest, FECompConsultaReq feCompConsultaReq){
+        FECompConsultar request = new FECompConsultar();
+        request.setAuth(authRequest);
+        request.setFeCompConsReq(feCompConsultaReq);
+        return wsfeClient.feCompConsultar(request);
+    }
+
 }
