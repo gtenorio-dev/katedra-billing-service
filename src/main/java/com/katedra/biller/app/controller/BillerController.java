@@ -33,7 +33,7 @@ public class BillerController {
 	public ResponseEntity<InputStreamResource> pdf(@RequestBody BillDTO billDTO) throws Exception {
 		ByteArrayInputStream file = billerService.buildFile(billDTO);
 		HttpHeaders headers = new HttpHeaders();
-		headers.add("Content-Disposition", "attachment; filename=test.pdf");
+		headers.add("Content-Disposition", "attachment; filename=".concat(billerService.getFileName(billDTO)));
 		return ResponseEntity.ok().headers(headers).contentType(MediaType.APPLICATION_PDF)
 				.body(new InputStreamResource(file));
 	}

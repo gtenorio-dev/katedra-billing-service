@@ -92,15 +92,19 @@ public class BillerService {
         FECompConsultarResponse comprobante = wsfeService.getBill(getFEAuthRequest(account), feCompConsultaReq);
 
         if (comprobante.getFECompConsultarResult().getResultGet() != null) {
-            String fileName = billDTO.getCuit().toString().concat(account.getPuntoVenta().toString())
-                    .concat(billDTO.getNumComprobante().toString());
-            ByteArrayInputStream pdf = PDFGenerator.generate(fileName, comprobante.getFECompConsultarResult().getResultGet());
-//            logger.info("Invoice PDF path: ".concat(tempFile));
+            ByteArrayInputStream pdf = PDFGenerator.generate(account, comprobante.getFECompConsultarResult().getResultGet());
+            logger.info("Invoice PDF generated");
             return pdf;
         } else {
             // TODO throw not found exception
             throw new Exception(buildErrorMessage(comprobante.getFECompConsultarResult().getErrors().getErr()));
         }
+    }
+
+    public String getFileName(BillDTO billDTO) {
+        AccountEntity account = accountService.findByCuit(billDTO.getCuit());
+        return billDTO.getCuit().toString().concat(account.getPuntoVenta().toString())
+                .concat(billDTO.getNumComprobante().toString());
     }
 
     private void validateBill(AccountEntity account, FECAEResponse res, BillingPayload billingPayload) {
@@ -247,4 +251,5 @@ public class BillerService {
 
         return feCAEDetRequest;
     }
+
 }
