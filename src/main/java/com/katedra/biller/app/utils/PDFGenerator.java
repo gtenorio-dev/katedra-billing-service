@@ -2,6 +2,7 @@ package com.katedra.biller.app.utils;
 
 import com.katedra.biller.app.client.gen.FECompConsResponse;
 import com.katedra.biller.app.dto.BillDTO;
+import com.katedra.biller.app.dto.ProductDTO;
 import com.katedra.biller.app.entity.AccountEntity;
 import com.lowagie.text.*;
 import com.lowagie.text.Font;
@@ -17,18 +18,21 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 public class PDFGenerator {
+
+    private static final DecimalFormat df = new DecimalFormat("000,000.00");
 
     public static ByteArrayInputStream generate(AccountEntity account, BillDTO billDTO,
                                                 FECompConsResponse comprobante) throws IOException, ParseException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4);
         PdfWriter.getInstance(document, out);
-
-        document.open();
 
         // ----- Colors -----
         Color transparent = new Color(0F,0F,0F,0F);
@@ -190,6 +194,8 @@ public class PDFGenerator {
         clientInfo.addCell(noBorderCell(new Paragraph("Condición frente al IVA: Consumidor Final", h4)));
         clientInfo.addCell(noBorderCell());
         clientInfo.addCell(noBorderCell(new Paragraph("Forma de Pago: ".concat(billDTO.getFormaDePago()), h4)));
+        clientInfo.addCell(noBorderCell());
+        clientInfo.addCell(noBorderCell(5));
 
 
         // ----- Products -----
@@ -217,6 +223,18 @@ public class PDFGenerator {
 
         // ----- Products Item -----
 
+        double totalAmount = 0;
+        for (ProductDTO item : billDTO.getProductos()) {
+            products.addCell(noBorderCell(new Paragraph(item.getNombre(), h4),5));
+            products.addCell(noBorderCell(new Paragraph(Integer.toString(item.getCantidad()), h4),5));
+            products.addCell(noBorderCell(new Paragraph(
+                    String.format(Locale.ITALY,"%,.2f", item.getPrecioUnitario()), h4),5));
+            products.addCell(noBorderCell(new Paragraph(
+                    String.format(Locale.ITALY,"%,.2f", item.getTotal()), h4),5));
+            totalAmount += item.getTotal();
+        }
+        products.addCell(noBorderCell(10));
+
 
         // ----- Total -----
         Table totalInfo = new Table(2);
@@ -224,22 +242,22 @@ public class PDFGenerator {
         totalInfo.setBorderColor(Color.GRAY);
         totalInfo.setWidths(new int[]{60,40});
 
-        totalInfo.addCell(noBorderCell(35));
-        totalInfo.addCell(noBorderCell(35));
+        totalInfo.addCell(noBorderCell(25));
+        totalInfo.addCell(noBorderCell(25));
         totalInfo.addCell(noBorderCell());
 
         Table totalAmounts = noBorderTable(2);
 
         Cell subtotalCell = noBorderCell(new Paragraph("Subtotal: $", h4B));
         subtotalCell.setHorizontalAlignment(HorizontalAlignment.RIGHT);
-        Cell subtotalValueCell = noBorderCell(new Paragraph("TODO", h4B));
+        Cell subtotalValueCell = noBorderCell(new Paragraph(String.format(Locale.ITALY,"%,.2f", totalAmount), h4B));
         subtotalValueCell.setHorizontalAlignment(HorizontalAlignment.RIGHT);
         totalAmounts.addCell(subtotalCell);
         totalAmounts.addCell(subtotalValueCell);
 
         Cell total = noBorderCell(new Paragraph("Importe Total: $", h4B));
         total.setHorizontalAlignment(HorizontalAlignment.RIGHT);
-        Cell totalValue = noBorderCell(new Paragraph("TODO", h4B));
+        Cell totalValue = noBorderCell(new Paragraph(String.format(Locale.ITALY,"%,.2f", totalAmount), h4B));
         totalValue.setHorizontalAlignment(HorizontalAlignment.RIGHT);
         totalAmounts.addCell(total);
         totalAmounts.addCell(totalValue);
@@ -264,6 +282,7 @@ public class PDFGenerator {
 
 
         // ----- Layout -----
+        document.open();
         document.add(accountInfo);
         document.add(emptyDivider);
         document.add(greyDivider);
