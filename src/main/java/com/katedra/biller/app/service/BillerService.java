@@ -92,7 +92,7 @@ public class BillerService {
         FECompConsultarResponse comprobante = wsfeService.getBill(getFEAuthRequest(account), feCompConsultaReq);
 
         if (comprobante.getFECompConsultarResult().getResultGet() != null) {
-            ByteArrayInputStream pdf = PDFGenerator.generate(account, comprobante.getFECompConsultarResult().getResultGet());
+            ByteArrayInputStream pdf = PDFGenerator.generate(account, billDTO, comprobante.getFECompConsultarResult().getResultGet());
             logger.info("Invoice PDF generated");
             return pdf;
         } else {
