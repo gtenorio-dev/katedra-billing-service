@@ -24,12 +24,10 @@ public class BillEntity {
     private String fechaProceso; // yyyymmddHHmmss
 
     @Column(name = "comprobante_num")
-    private Long numComprobante; // yyyymmddHHmmss
+    private Long numComprobante;
 
     @Column(name = "comprobante_fecha")
     private String fechaComprobante; // yyyymmdd
-
-    private String resultado; // Aprobado = A ; Parcialmente Aprobado = P ; Rechazado = R
 
     private Long dni; // Del comprador
 
@@ -38,7 +36,7 @@ public class BillEntity {
     @Column(name = "cae_fecha_vto")
     private String caeFechaVto;
 
-    private String mensaje;
+    private double importe;
 
     @ManyToOne
     private AccountEntity account;

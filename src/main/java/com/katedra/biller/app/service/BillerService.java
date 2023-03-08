@@ -1,9 +1,7 @@
 package com.katedra.biller.app.service;
 
 import com.katedra.biller.app.client.gen.*;
-import com.katedra.biller.app.dto.BillDTO;
-import com.katedra.biller.app.dto.BillDetailDTO;
-import com.katedra.biller.app.dto.BillingPayload;
+import com.katedra.biller.app.dto.*;
 import com.katedra.biller.app.entity.AccountEntity;
 import com.katedra.biller.app.entity.BillEntity;
 import com.katedra.biller.app.model.TicketAccess;
@@ -11,23 +9,32 @@ import com.katedra.biller.app.repository.BillRepository;
 import com.katedra.biller.app.utils.PDFGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class BillerService {
 
     private static final Logger logger = LoggerFactory.getLogger(BillerService.class);
+    private final AfipWSAAService wsaaService;
+    private final AfipWSFEService wsfeService;
+    private final AccountService accountService;
+    private final BillRepository billRepository;
+
+    public BillerService(AfipWSAAService wsaaService, AfipWSFEService wsfeService, AccountService accountService,
+                         BillRepository billRepository) {
+        this.wsaaService = wsaaService;
+        this.wsfeService = wsfeService;
+        this.accountService = accountService;
+        this.billRepository = billRepository;
+    }
 
     @Value("${afip.billing.concepto}")
     private int concepto;
@@ -50,24 +57,11 @@ public class BillerService {
     private static final String RECHAZADO = "R";
     private static final String PARCIAL = "P";
 
-    @Autowired
-    private AfipWSAAService wsaaService;
-    @Autowired
-    private AfipWSFEService wsfeService;
-    @Autowired
-    private AccountService accountService;
-
-    @Autowired
-    private BillRepository billRepository;
-
-    public FECAESolicitarResponse create(BillingPayload billingPayload) throws Exception {
+    public BillProcess create(BillingPayload billingPayload) throws Exception {
         AccountEntity account = accountService.findByCuit(billingPayload.getCuit());
         FECAESolicitarResponse fecaeSolicitarResponse = wsfeService.generateBill(
                 getFEAuthRequest(account), buildBillRequest(billingPayload, account));
-
-        validateBill(account, fecaeSolicitarResponse.getFECAESolicitarResult(), billingPayload);
-
-        return fecaeSolicitarResponse;
+        return saveBills(account, fecaeSolicitarResponse.getFECAESolicitarResult(), billingPayload);
     }
 
     public FECompUltimoAutorizadoResponse getUltimoComprobanteAutorizado(Long cuit) throws Exception {
@@ -81,15 +75,22 @@ public class BillerService {
         return wsfeService.getPuntosVenta(getFEAuthRequest(account));
     }
 
-    public ByteArrayInputStream buildFile(BillDTO billDTO) throws Exception {
-        AccountEntity account = accountService.findByCuit(billDTO.getCuit());
-
+    public FECompConsultarResponse getBillInfo(AccountEntity account, Long numComprobante) throws Exception {
         FECompConsultaReq feCompConsultaReq = new FECompConsultaReq();
-        feCompConsultaReq.setCbteNro(billDTO.getNumComprobante());
+        feCompConsultaReq.setCbteNro(numComprobante);
         feCompConsultaReq.setPtoVta(account.getPuntoVenta());
         feCompConsultaReq.setCbteTipo(cbteTipo);
+        return wsfeService.getBill(getFEAuthRequest(account), feCompConsultaReq);
+    }
 
-        FECompConsultarResponse comprobante = wsfeService.getBill(getFEAuthRequest(account), feCompConsultaReq);
+    public FECompConsultarResponse getBillInfo(Long cuit, Long numComprobante) throws Exception {
+        AccountEntity account = accountService.findByCuit(cuit);
+        return getBillInfo(account, numComprobante);
+    }
+
+    public ByteArrayInputStream buildFile(BillDTO billDTO) throws Exception {
+        AccountEntity account = accountService.findByCuit(billDTO.getCuit());
+        FECompConsultarResponse comprobante = getBillInfo(account, billDTO.getNumComprobante());
 
         if (comprobante.getFECompConsultarResult().getResultGet() != null) {
             ByteArrayInputStream pdf = PDFGenerator.generate(account, billDTO, comprobante.getFECompConsultarResult().getResultGet());
@@ -101,59 +102,114 @@ public class BillerService {
         }
     }
 
-    public String getFileName(BillDTO billDTO) {
+    public String getPDFFileName(BillDTO billDTO) {
         AccountEntity account = accountService.findByCuit(billDTO.getCuit());
         return billDTO.getCuit().toString().concat(account.getPuntoVenta().toString())
                 .concat(billDTO.getNumComprobante().toString());
     }
 
-    private void validateBill(AccountEntity account, FECAEResponse res, BillingPayload billingPayload) {
+    public Double getTotalBills(Long cuit, Date since, Date to) {
+
+        System.out.println("TODO");
+
+        return 12345D;
+    }
+
+    private BillProcess saveBills(AccountEntity account, FECAEResponse res, BillingPayload billingPayload) {
+        BillProcess billProcess = new BillProcess();
         switch (res.getFeCabResp().getResultado()) {
             case APROBADO:
                 logger.info("APROBADO");
-                res.getFeDetResp().getFECAEDetResponse().forEach(item -> {
-                    saveBill(item, res.getFeCabResp().getFchProceso(), account);
-                });
+                for (int i = 0; i < res.getFeDetResp().getFECAEDetResponse().size(); i++) {
+                    FECAEDetResponse item = res.getFeDetResp().getFECAEDetResponse().get(i);
+                    BillDetailDTO billItem = billingPayload.getDetails().get(i);
+                    saveBill(item, res.getFeCabResp().getFchProceso(), account, billItem);
+
+                    BillProcessDetail detail = new BillProcessDetail(billItem.getVentaId(),item.getCbteDesde(), item.getCAE(), null);
+                    billProcess.addDetail(detail);
+                }
                 break;
             case RECHAZADO:
                 logger.info("RECHAZADO");
+                for (int i = 0; i < res.getFeDetResp().getFECAEDetResponse().size(); i++) {
+                    FECAEDetResponse item = res.getFeDetResp().getFECAEDetResponse().get(i);
+                    BillDetailDTO billItem = billingPayload.getDetails().get(i);
+                    billingError(billProcess, item, billItem);
+                }
                 break;
             case PARCIAL:
                 logger.info("PARCIAL");
-                res.getFeDetResp().getFECAEDetResponse().forEach(item -> {
-                    if (APROBADO.equals(item.getResultado())) saveBill(item, res.getFeCabResp().getFchProceso(), account);
-                });
+                for (int i = 0; i < res.getFeDetResp().getFECAEDetResponse().size(); i++) {
+                    FECAEDetResponse item = res.getFeDetResp().getFECAEDetResponse().get(i);
+                    BillDetailDTO billItem = billingPayload.getDetails().get(i);
+                    if (APROBADO.equals(item.getResultado())) {
+                        saveBill(item, res.getFeCabResp().getFchProceso(), account, billItem);
+
+                        BillProcessDetail detail = new BillProcessDetail(billItem.getVentaId(),item.getCbteDesde(), item.getCAE(), null);
+                        billProcess.addDetail(detail);
+                    } else {
+                        billingError(billProcess, item, billItem);
+                    }
+                }
                 break;
         }
+        billProcess.setError(buildErrorMessage(res.getErrors() != null? res.getErrors().getErr(): null));
+        return billProcess;
     }
 
-    private void saveBill(FECAEDetResponse item, String fchProceso, AccountEntity account) {
+    private void billingError(BillProcess billProcess, FECAEDetResponse item, BillDetailDTO billItem) {
+        String errorMsg = item.getObservaciones() != null? buildItemErrorMessage(item.getObservaciones().getObs()): null;
+        logger.error("Venta ".concat(billItem.getVentaId().toString()).concat(" - Estado: ")
+                .concat(item.getResultado()).concat(" - Mensaje: ")
+                .concat(errorMsg == null? "" : errorMsg));
+
+        BillProcessDetail detail = new BillProcessDetail(billItem.getVentaId(), null, null, errorMsg);
+        billProcess.addDetail(detail);
+    }
+
+    private void saveBill(FECAEDetResponse item, String fchProceso, AccountEntity account, BillDetailDTO billItem) {
         BillEntity bill = new BillEntity();
         bill.setFechaProceso(fchProceso);
         bill.setNumComprobante(item.getCbteDesde());
         bill.setFechaComprobante(item.getCbteFch());
-        bill.setResultado(item.getResultado());
         bill.setDni(item.getDocNro());
         bill.setCae(item.getCAE());
         bill.setCaeFechaVto(item.getCAEFchVto());
         bill.setAccount(account);
+
+        try {
+            FECompConsultarResponse comprobante = getBillInfo(account, bill.getNumComprobante());
+            bill.setImporte(comprobante.getFECompConsultarResult().getResultGet().getImpTotal());
+        } catch (Exception e) {
+            logger.error("No se pudo consultar la informacion de la Factura nro: ".concat(bill.getNumComprobante().toString()));
+            bill.setImporte(billItem.getImporte());
+        }
+
         billRepository.save(bill);
-        logger.info("CUIT del facturador: ".concat(account.getCuit().toString())
-                .concat(" - Se genero con exito la factura con id ").concat(bill.getId().toString())
-                .concat(" y CAE ").concat(bill.getCae()));
+        logger.info("Venta Nro: ".concat(billItem.getVentaId().toString()).concat(" - CUIT del facturador: ")
+                .concat(account.getCuit().toString()).concat(" - Se generó con éxito la Factura Nro: ")
+                .concat(bill.getNumComprobante().toString()).concat(" con CAE ").concat(bill.getCae()));
     }
 
     private String buildItemErrorMessage(List<Obs> obs) {
-        StringBuilder errorMessages = new StringBuilder();
-        obs.forEach(ob -> errorMessages.append(String.valueOf(
-                ob.getCode()).concat(" - ").concat(ob.getMsg()).concat("\n")));
-        return errorMessages.toString();
+        if (obs != null) {
+            StringBuilder errorMessages = new StringBuilder();
+            obs.forEach(ob -> errorMessages.append(String.valueOf(
+                    ob.getCode()).concat(" - ").concat(ob.getMsg()).concat("\n")));
+            return errorMessages.toString();
+        } else {
+            return null;
+        }
     }
 
     private String buildErrorMessage(List<Err> errors) {
-        StringBuilder errorMessages = new StringBuilder();
-        errors.forEach(err -> errorMessages.append(String.valueOf(err.getCode()).concat(" - ").concat(err.getMsg())));
-        return errorMessages.toString();
+        if (errors != null) {
+            StringBuilder errorMessages = new StringBuilder();
+            errors.forEach(err -> errorMessages.append(String.valueOf(err.getCode()).concat(" - ").concat(err.getMsg())));
+            return errorMessages.toString();
+        } else {
+            return null;
+        }
     }
 
     /**

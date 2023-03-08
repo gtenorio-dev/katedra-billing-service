@@ -55,7 +55,6 @@ public class AfipWSAAService {
 			throw new Exception(e.getMessage());
 		}
 
-		Map<String, String> authentication = new HashMap<>();
 		try {
 			Reader tokenReader = new StringReader(response.getLoginCmsReturn());
 			Document tokenDoc = new SAXReader(false).read(tokenReader);

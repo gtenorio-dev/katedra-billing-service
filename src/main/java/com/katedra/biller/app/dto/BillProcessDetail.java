@@ -4,14 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class BillingPayload {
+public class BillProcessDetail {
 
-	private Long cuit;
-	private List<BillDetailDTO> details;
+    private Long ventaId;
+    private Long numComprobante;
+    private String cae;
+    private String error;
 
 }
