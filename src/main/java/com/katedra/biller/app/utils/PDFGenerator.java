@@ -219,7 +219,6 @@ public class PDFGenerator {
 
         // ----- Products Item -----
 
-        double totalAmount = 0;
         for (ProductDTO item : billDTO.getProductos()) {
             products.addCell(noBorderCell(new Paragraph(item.getNombre(), h4),5));
             products.addCell(noBorderCell(new Paragraph(Integer.toString(item.getCantidad()), h4),5));
@@ -227,7 +226,6 @@ public class PDFGenerator {
                     String.format(Locale.ITALY,"%,.2f", item.getPrecioUnitario()), h4),5));
             products.addCell(noBorderCell(new Paragraph(
                     String.format(Locale.ITALY,"%,.2f", item.getTotal()), h4),5));
-            totalAmount += item.getTotal();
         }
         products.addCell(noBorderCell(10));
 
@@ -246,14 +244,14 @@ public class PDFGenerator {
 
         Cell subtotalCell = noBorderCell(new Paragraph("Subtotal: $", h4B));
         subtotalCell.setHorizontalAlignment(HorizontalAlignment.RIGHT);
-        Cell subtotalValueCell = noBorderCell(new Paragraph(String.format(Locale.ITALY,"%,.2f", totalAmount), h4B));
+        Cell subtotalValueCell = noBorderCell(new Paragraph(String.format(Locale.ITALY,"%,.2f", comprobante.getImpTotal()), h4B));
         subtotalValueCell.setHorizontalAlignment(HorizontalAlignment.RIGHT);
         totalAmounts.addCell(subtotalCell);
         totalAmounts.addCell(subtotalValueCell);
 
         Cell total = noBorderCell(new Paragraph("Importe Total: $", h4B));
         total.setHorizontalAlignment(HorizontalAlignment.RIGHT);
-        Cell totalValue = noBorderCell(new Paragraph(String.format(Locale.ITALY,"%,.2f", totalAmount), h4B));
+        Cell totalValue = noBorderCell(new Paragraph(String.format(Locale.ITALY,"%,.2f", comprobante.getImpTotal()), h4B));
         totalValue.setHorizontalAlignment(HorizontalAlignment.RIGHT);
         totalAmounts.addCell(total);
         totalAmounts.addCell(totalValue);

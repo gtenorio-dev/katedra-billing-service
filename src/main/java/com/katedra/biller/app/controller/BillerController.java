@@ -60,6 +60,7 @@ public class BillerController {
 	public ResponseEntity<Double> balance(
 			@RequestParam Long cuit, @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date since,
 			@DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date to) {
+		// TODO modificar Bill Entity para poder hacer una busqueda por fechas
 		return new ResponseEntity<>(billerService.getTotalBills(cuit,since, to), HttpStatus.OK);
 	}
 
