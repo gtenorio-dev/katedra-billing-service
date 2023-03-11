@@ -1,13 +1,12 @@
 package com.katedra.biller.app.controller;
 
-import com.katedra.biller.app.client.gen.FECAESolicitarResponse;
 import com.katedra.biller.app.client.gen.FECompConsultarResponse;
 import com.katedra.biller.app.client.gen.FECompUltimoAutorizadoResponse;
 import com.katedra.biller.app.client.gen.FEParamGetPtosVentaResponse;
+import com.katedra.biller.app.dto.BanlanceDTO;
 import com.katedra.biller.app.dto.BillDTO;
 import com.katedra.biller.app.dto.BillProcess;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,13 +17,11 @@ import com.katedra.biller.app.dto.BillingPayload;
 import com.katedra.biller.app.service.BillerService;
 
 import java.io.ByteArrayInputStream;
-import java.util.Date;
-import java.util.List;
 
 @RestController
 @RequestMapping("/billing")
 public class BillerController {
-	
+
 	private final BillerService billerService;
 
 	public BillerController (BillerService billerService) {
@@ -56,10 +53,9 @@ public class BillerController {
 		return new ResponseEntity<>(billerService.getPuntosVenta(cuit), HttpStatus.OK);
 	}
 
-	@GetMapping("/balance")
-	public ResponseEntity<Double> balance(
-			@RequestParam Long cuit, @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date since,
-			@DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date to) {
+	@GetMapping("/balance") /// /balance?cuit=20940052301&since=20230101&to=20230401
+	public ResponseEntity<BanlanceDTO> balance(
+			@RequestParam Long cuit, @RequestParam String since, @RequestParam String to) throws Exception {
 		// TODO modificar Bill Entity para poder hacer una busqueda por fechas
 		return new ResponseEntity<>(billerService.getTotalBills(cuit,since, to), HttpStatus.OK);
 	}

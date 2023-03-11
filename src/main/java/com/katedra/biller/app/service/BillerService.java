@@ -13,8 +13,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -28,12 +28,20 @@ public class BillerService {
     private final AccountService accountService;
     private final BillRepository billRepository;
 
+    SimpleDateFormat dateFormat;
+    SimpleDateFormat dateTimeFormat;
+    SimpleDateFormat dateTimeZoneFormat;
+
     public BillerService(AfipWSAAService wsaaService, AfipWSFEService wsfeService, AccountService accountService,
                          BillRepository billRepository) {
         this.wsaaService = wsaaService;
         this.wsfeService = wsfeService;
         this.accountService = accountService;
         this.billRepository = billRepository;
+
+        this.dateFormat = new SimpleDateFormat("yyyyMMdd");
+        this.dateTimeFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+        this.dateTimeZoneFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
     }
 
     @Value("${afip.billing.concepto}")
@@ -97,8 +105,10 @@ public class BillerService {
             logger.info("Invoice PDF generated");
             return pdf;
         } else {
-            // TODO throw not found exception
-            throw new Exception(buildErrorMessage(comprobante.getFECompConsultarResult().getErrors().getErr()));
+            // TODO throw not found exception ("El comprobante X no fue encontrado")
+            String errorMsg = buildErrorMessage(comprobante.getFECompConsultarResult().getErrors().getErr());
+            logger.error("Error generando el pdf. {}", errorMsg);
+            throw new Exception(errorMsg);
         }
     }
 
@@ -108,14 +118,28 @@ public class BillerService {
                 .concat(billDTO.getNumComprobante().toString());
     }
 
-    public Double getTotalBills(Long cuit, Date since, Date to) {
+    public BanlanceDTO getTotalBills(Long cuit, String sinceStr, String toStr) throws Exception {
+        Date since;
+        Date to;
+        try {
+            since = dateFormat.parse(sinceStr);
+            to = dateFormat.parse(toStr);
+        } catch (ParseException e) {
+            // TODO return 400 Bad Request
+            logger.error("El formato de las fechas es invalido");
+            throw new Exception("El formato de las fechas es invalido");
+        }
 
-        System.out.println("TODO");
+        List<BillEntity> bills = billRepository.findBillsByCuitBetweenDates(cuit,since,to);
 
-        return 12345D;
+        BanlanceDTO res = new BanlanceDTO();
+        res.setCuit(cuit);
+        res.setFacturas((long) bills.size());
+        res.setFacturado(bills.stream().mapToDouble(BillEntity::getImporte).sum());
+        return res;
     }
 
-    private BillProcess saveBills(AccountEntity account, FECAEResponse res, BillingPayload billingPayload) {
+    private BillProcess saveBills(AccountEntity account, FECAEResponse res, BillingPayload billingPayload) throws ParseException {
         BillProcess billProcess = new BillProcess();
         switch (res.getFeCabResp().getResultado()) {
             case APROBADO:
@@ -167,14 +191,16 @@ public class BillerService {
         billProcess.addDetail(detail);
     }
 
-    private void saveBill(FECAEDetResponse item, String fchProceso, AccountEntity account, BillDetailDTO billItem) {
+    private void saveBill(FECAEDetResponse item, String fchProceso, AccountEntity account, BillDetailDTO billItem) throws ParseException {
         BillEntity bill = new BillEntity();
-        bill.setFechaProceso(fchProceso);
         bill.setNumComprobante(item.getCbteDesde());
-        bill.setFechaComprobante(item.getCbteFch());
         bill.setDni(item.getDocNro());
         bill.setCae(item.getCAE());
-        bill.setCaeFechaVto(item.getCAEFchVto());
+        bill.setFechaProceso(dateTimeFormat.parse(fchProceso));
+        bill.setFechaComprobante(dateFormat.parse(item.getCbteFch()));
+        bill.setCaeFechaVto(dateFormat.parse(item.getCAEFchVto()));
+        bill.setVentaId(billItem.getVentaId());
+
         bill.setAccount(account);
 
         try {
@@ -224,8 +250,8 @@ public class BillerService {
             TicketAccess ta = wsaaService.authenticate(account);
             account = accountService.updateSession(account, ta);
         } else {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-            Date expirationTime = dateFormat.parse(account.getExpirationTime());
+
+            Date expirationTime = dateTimeZoneFormat.parse(account.getExpirationTime());
             Date currentDateTime = new Date();
 
             Calendar calendar = Calendar.getInstance();

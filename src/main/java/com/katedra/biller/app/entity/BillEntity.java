@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import javax.persistence.*;
+import java.util.Date;
 
 
 @Entity
@@ -21,22 +22,29 @@ public class BillEntity {
     private Long id;
 
     @Column(name = "proceso_fecha")
-    private String fechaProceso; // yyyymmddHHmmss TODO cambiar a formato Date para poder filtrar
+    private Date fechaProceso; // yyyymmddHHmmss
 
     @Column(name = "comprobante_num")
     private Long numComprobante;
 
     @Column(name = "comprobante_fecha")
-    private String fechaComprobante; // yyyymmdd TODO cambiar a formato Date para poder filtrar
+    @Temporal(TemporalType.DATE)
+    private Date fechaComprobante; // yyyymmdd
+
+    // TODO private Date fechaServicioDesde
 
     private Long dni; // Del comprador
 
     private String cae;
 
     @Column(name = "cae_fecha_vto")
-    private String caeFechaVto; // TODO cambiar a formato Date para poder filtrar
+    @Temporal(TemporalType.DATE)
+    private Date caeFechaVto; // yyyymmdd
 
     private double importe;
+
+    @Column(name = "venta_id")
+    private Long ventaId;
 
     @ManyToOne
     private AccountEntity account;
