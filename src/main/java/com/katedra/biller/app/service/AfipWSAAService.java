@@ -2,8 +2,6 @@ package com.katedra.biller.app.service;
 
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.katedra.biller.app.entity.AccountEntity;
 import org.apache.axis.encoding.Base64;

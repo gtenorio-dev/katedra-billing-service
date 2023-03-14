@@ -1,5 +1,6 @@
 package com.katedra.biller.app.utils;
 
+import com.google.zxing.WriterException;
 import com.katedra.biller.app.client.gen.FECompConsResponse;
 import com.katedra.biller.app.dto.BillDTO;
 import com.katedra.biller.app.dto.ProductDTO;
@@ -25,7 +26,7 @@ public class PDFGenerator {
     private static final DecimalFormat df = new DecimalFormat("000,000.00");
 
     public static ByteArrayInputStream generate(AccountEntity account, BillDTO billDTO,
-                                                FECompConsResponse comprobante) throws IOException, ParseException {
+                                                FECompConsResponse comprobante, String qrUrl) throws IOException, ParseException, WriterException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4);
         PdfWriter.getInstance(document, out);
@@ -262,13 +263,13 @@ public class PDFGenerator {
         totalInfo.addCell(noBorderCell(15));
 
 
-        // ----- CAE -----
+        // ----- Footer - CAE -----
         Table caeInfo = new Table(2);
         caeInfo.setWidth(100);
         caeInfo.setBorderColor(Color.GRAY);
         caeInfo.setWidths(new int[]{60,40});
 
-        caeInfo.addCell(noBorderCell());
+        caeInfo.addCell(noBorderCell(Image.getInstance(QRCodeGenerator.generateQRCode(comprobante, account, qrUrl).toByteArray())));
 
         Cell cae = noBorderCell(new Paragraph("C.A.E. Nro: ".concat(comprobante.getCodAutorizacion()), h4B), 20);
         cae.add(new Paragraph("Fecha Vto. de CAE: ".concat(datePDFFormat.format(dateAfipFormat.parse(comprobante.getFchVto()))), h4B));

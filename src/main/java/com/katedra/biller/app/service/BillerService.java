@@ -60,6 +60,8 @@ public class BillerService {
     private String monId;
     @Value("${afip.billing.monCotiz}")
     private int monCotiz;
+    @Value("${afip.fe.qr.url}")
+    private String qrUrl;
 
     private static final String APROBADO = "A";
     private static final String RECHAZADO = "R";
@@ -101,7 +103,7 @@ public class BillerService {
         FECompConsultarResponse comprobante = getBillInfo(account, billDTO.getNumComprobante());
 
         if (comprobante.getFECompConsultarResult().getResultGet() != null) {
-            ByteArrayInputStream pdf = PDFGenerator.generate(account, billDTO, comprobante.getFECompConsultarResult().getResultGet());
+            ByteArrayInputStream pdf = PDFGenerator.generate(account, billDTO, comprobante.getFECompConsultarResult().getResultGet(), qrUrl);
             logger.info("Invoice PDF generated");
             return pdf;
         } else {
@@ -115,7 +117,7 @@ public class BillerService {
     public String getPDFFileName(BillDTO billDTO) {
         AccountEntity account = accountService.findByCuit(billDTO.getCuit());
         return billDTO.getCuit().toString().concat(account.getPuntoVenta().toString())
-                .concat(billDTO.getNumComprobante().toString());
+                .concat(billDTO.getNumComprobante().toString()).concat(".pdf");
     }
 
     public BanlanceDTO getTotalBills(Long cuit, String sinceStr, String toStr) throws Exception {

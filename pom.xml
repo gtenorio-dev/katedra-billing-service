@@ -1,190 +1,199 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.7.5</version>
-		<relativePath /> <!-- lookup parent from repository -->
-	</parent>
-	<groupId>com.katedra.biller</groupId>
-	<artifactId>katedra-billing-service</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>katedra-billing-service</name>
-	<description>AFIP Biller</description>
-	<properties>
-		<java.version>11</java.version>
-	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web-services</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<scope>runtime</scope>
-		</dependency>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.7.5</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>com.katedra.biller</groupId>
+    <artifactId>katedra-billing-service</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>katedra-billing-service</name>
+    <description>AFIP Biller</description>
+    <properties>
+        <java.version>11</java.version>
+    </properties>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <!--			<plugin>-->
+            <!--				<groupId>org.jvnet.jaxb2.maven2</groupId>-->
+            <!--				<artifactId>maven-jaxb2-plugin</artifactId>-->
+            <!--				<version>0.14.0</version>-->
+            <!--				<executions>-->
+            <!--					<execution>-->
+            <!--						<goals>-->
+            <!--							<goal>generate</goal>-->
+            <!--						</goals>-->
+            <!--					</execution>-->
+            <!--				</executions>-->
+            <!--				<configuration>-->
+            <!--					<schemaLanguage>WSDL</schemaLanguage>-->
+            <!--					<generateDirectory>${project.basedir}/src/main/java</generateDirectory>-->
+            <!--					<generatePackage>com.katedra.biller.app.client.gen</generatePackage>-->
+            <!--					<schemaDirectory>${project.basedir}/src/main/resources/wsdl</schemaDirectory>-->
+            <!--					<schemaIncludes>-->
+            <!--						<include>*.wsdl</include>-->
+            <!--					</schemaIncludes>-->
+            <!--				</configuration>-->
+            <!--			</plugin>-->
+        </plugins>
+    </build>
 
-		<!--  AFIP dependencies-->
-		<!-- Apache AXIS (axis.jar) -->
-		<dependency>
-			<groupId>org.apache.axis</groupId>
-			<artifactId>axis</artifactId>
-			<version>1.4</version>
-		</dependency>
-		<!-- Apache AXIS (jaxrpc.jar) -->
-		<dependency>
-			<groupId>javax.xml</groupId>
-			<artifactId>jaxrpc</artifactId>
-			<version>1.1</version>
-		</dependency>
-		<!-- Apache AXIS (saaj.jar) -->
-		<dependency>
-			<groupId>org.apache.axis</groupId>
-			<artifactId>axis-saaj</artifactId>
-			<version>1.4</version>
-		</dependency>
-		<!-- Apache Jakarta Commons Discovery (commons-discovery.jar)  -->
-		<dependency>
-			<groupId>commons-discovery</groupId>
-			<artifactId>commons-discovery</artifactId>
-			<version>0.4</version>
-		</dependency>
-		<!-- Apache Jakarta Commons Logging (commons-logging.jar) -->
-		<dependency>
-			<groupId>commons-logging</groupId>
-			<artifactId>commons-logging</artifactId>
-			<version>1.2</version>
-		</dependency>
-		<!-- Sun javamail (mail.jar) -->
-		<dependency>
-			<groupId>javax.mail</groupId>
-			<artifactId>mail</artifactId>
-			<version>1.4</version>
-		</dependency>
-		<!-- IBM Web Services Description Language for Java Toolkit (wsdl4j.jar) -->
-		<dependency>
-			<groupId>wsdl4j</groupId>
-			<artifactId>wsdl4j</artifactId>
-			<version>1.6.2</version>
-		</dependency>
-		<!-- Bouncy Castle Crypto APIs (bcmail.jar) -->
-		<dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcmail-jdk15</artifactId>
-			<version>1.46</version>
-		</dependency>
-		<!-- Bouncy Castle Crypto APIs (bcprov.jar) -->
-		<dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcprov-jdk15on</artifactId>
-			<version>1.70</version>
-		</dependency>
-		<!-- dom4j (dom4j.jar) -->
-		<dependency>
-			<groupId>dom4j</groupId>
-			<artifactId>dom4j</artifactId>
-			<version>1.6.1</version>
-		</dependency>
-		<!-- Java XPath Engine (jaxen.jar)-->
-		<dependency>
-			<groupId>jaxen</groupId>
-			<artifactId>jaxen</artifactId>
-			<version>1.1.6</version>
-		</dependency>
-		<dependency>
-			<groupId>xerces</groupId>
-			<artifactId>xercesImpl</artifactId>
-			<version>2.8.1</version>
-		</dependency>
-		<!-- JAXB API -->
-		<dependency>
-			<groupId>javax.xml.bind</groupId>
-			<artifactId>jaxb-api</artifactId>
-			<version>2.3.1</version>
-		</dependency>
-		<!-- JAXB RI -->
-		<dependency>
-			<groupId>com.sun.xml.bind</groupId>
-			<artifactId>jaxb-impl</artifactId>
-			<version>2.3.4</version>
-		</dependency>
-		<dependency>
-			<groupId>jakarta.xml.bind</groupId>
-			<artifactId>jakarta.xml.bind-api</artifactId>
-			<version>4.0.0</version>
-		</dependency>
-		<!--  AFIP dependencies-->
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web-services</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
-		<!-- DB -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa</artifactId>
-		</dependency>
+        <!--  AFIP dependencies-->
+        <!-- Apache AXIS (axis.jar) -->
+        <dependency>
+            <groupId>org.apache.axis</groupId>
+            <artifactId>axis</artifactId>
+            <version>1.4</version>
+        </dependency>
+        <!-- Apache AXIS (jaxrpc.jar) -->
+        <dependency>
+            <groupId>javax.xml</groupId>
+            <artifactId>jaxrpc</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <!-- Apache AXIS (saaj.jar) -->
+        <dependency>
+            <groupId>org.apache.axis</groupId>
+            <artifactId>axis-saaj</artifactId>
+            <version>1.4</version>
+        </dependency>
+        <!-- Apache Jakarta Commons Discovery (commons-discovery.jar)  -->
+        <dependency>
+            <groupId>commons-discovery</groupId>
+            <artifactId>commons-discovery</artifactId>
+            <version>0.4</version>
+        </dependency>
+        <!-- Apache Jakarta Commons Logging (commons-logging.jar) -->
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.2</version>
+        </dependency>
+        <!-- Sun javamail (mail.jar) -->
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>mail</artifactId>
+            <version>1.4</version>
+        </dependency>
+        <!-- IBM Web Services Description Language for Java Toolkit (wsdl4j.jar) -->
+        <dependency>
+            <groupId>wsdl4j</groupId>
+            <artifactId>wsdl4j</artifactId>
+            <version>1.6.2</version>
+        </dependency>
+        <!-- Bouncy Castle Crypto APIs (bcmail.jar) -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcmail-jdk15</artifactId>
+            <version>1.46</version>
+        </dependency>
+        <!-- Bouncy Castle Crypto APIs (bcprov.jar) -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.70</version>
+        </dependency>
+        <!-- dom4j (dom4j.jar) -->
+        <dependency>
+            <groupId>dom4j</groupId>
+            <artifactId>dom4j</artifactId>
+            <version>1.6.1</version>
+        </dependency>
+        <!-- Java XPath Engine (jaxen.jar)-->
+        <dependency>
+            <groupId>jaxen</groupId>
+            <artifactId>jaxen</artifactId>
+            <version>1.1.6</version>
+        </dependency>
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <version>2.8.1</version>
+        </dependency>
+        <!-- JAXB API -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+        <!-- JAXB RI -->
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <version>2.3.4</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+        <!--  AFIP dependencies-->
 
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<!-- DB -->
+        <!-- DB -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
 
-		<!-- PDF -->
-		<dependency>
-			<groupId>com.github.librepdf</groupId>
-			<artifactId>openpdf</artifactId>
-			<version>1.3.30</version>
-		</dependency>
-		<!-- PDF -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- DB -->
 
-	</dependencies>
+        <!-- PDF -->
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>1.3.30</version>
+        </dependency>
+        <!-- PDF -->
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-				<configuration>
-					<excludes>
-						<exclude>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-						</exclude>
-					</excludes>
-				</configuration>
-			</plugin>
-<!--			<plugin>-->
-<!--				<groupId>org.jvnet.jaxb2.maven2</groupId>-->
-<!--				<artifactId>maven-jaxb2-plugin</artifactId>-->
-<!--				<version>0.14.0</version>-->
-<!--				<executions>-->
-<!--					<execution>-->
-<!--						<goals>-->
-<!--							<goal>generate</goal>-->
-<!--						</goals>-->
-<!--					</execution>-->
-<!--				</executions>-->
-<!--				<configuration>-->
-<!--					<schemaLanguage>WSDL</schemaLanguage>-->
-<!--					<generateDirectory>${project.basedir}/src/main/java</generateDirectory>-->
-<!--					<generatePackage>com.katedra.biller.app.client.gen</generatePackage>-->
-<!--					<schemaDirectory>${project.basedir}/src/main/resources/wsdl</schemaDirectory>-->
-<!--					<schemaIncludes>-->
-<!--						<include>*.wsdl</include>-->
-<!--					</schemaIncludes>-->
-<!--				</configuration>-->
-<!--			</plugin>-->
-		</plugins>
-	</build>
+        <!-- QR Code-->
+        <dependency>
+            <groupId>com.github.hiwepy</groupId>
+            <artifactId>zxing-spring-boot-starter</artifactId>
+            <version>2.0.0.RELEASE</version>
+        </dependency>
+        <!-- QR Code-->
+
+    </dependencies>
 
 </project>
