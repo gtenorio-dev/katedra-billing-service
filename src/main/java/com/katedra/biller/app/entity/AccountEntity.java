@@ -24,18 +24,20 @@ public class AccountEntity {
     private Long cuit;
     @Column(name = "punto_venta", nullable = false)
     private Integer puntoVenta;
+    @Column(name = "tipo_factura", nullable = false)
+    private Integer tipoFactura;
+    @Column(name = "concepto", nullable = false)
+    private Integer concepto;
+    @Column(name = "razon_social", nullable = false)
+    private String razonSocial;
+    @Column(name = "inicio_actividad", nullable = false)
+    private String inicioActividad;
+    @Column(name = "condicion_de_venta", nullable = false)
+    private String condicionDeVenta;
+    @Column(name = "condicion_frente_al_iva", nullable = false)
+    private String condicionFrenteAlIva;
+    @Column(name = "activo", nullable = false)
+    private Boolean activo;
 
-    @Column(name = "sesion_clave", length = 2000)
-    private String token;
-    @Column(name = "sesion_firma")
-    private String sign;
-    @Column(name = "sesion_expiracion")
-    private String expirationTime;
-    @Column(name = "cert_name", nullable = false)
-    private String certName;
-    @Column(name = "cert_signer", nullable = false)
-    private String certSigner;
-    @Column(name = "cert_password", nullable = false)
-    private String certPassword;
 
 }

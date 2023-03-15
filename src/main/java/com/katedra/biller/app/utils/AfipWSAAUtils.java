@@ -37,7 +37,8 @@ public class AfipWSAAUtils {
 	 * @param TicketTime
 	 * @return byte[] CMS File
 	 */
-	public static byte[] create_cms(AccountEntity account, String dstDN, String service, Long TicketTime) {
+	public static byte[] create_cms(
+			String certName, String certSigner, String certPassword, String dstDN, String service, Long TicketTime) {
 		PrivateKey pKey = null;
 		X509Certificate pCertificate = null;
 		byte[] asn1_cms = null;
@@ -52,13 +53,13 @@ public class AfipWSAAUtils {
 			// Create a keystore using keys from the pkcs#12 p12file
 			KeyStore ks = KeyStore.getInstance("pkcs12");
 			FileInputStream p12stream = new FileInputStream(
-					AfipWSAAUtils.class.getClassLoader().getResource(account.getCertName()).getPath());
-			ks.load(p12stream, account.getCertPassword().toCharArray());
+					AfipWSAAUtils.class.getClassLoader().getResource(certName).getPath());
+			ks.load(p12stream, certPassword.toCharArray());
 			p12stream.close();
 
 			// Get Certificate & Private key from KeyStore
-			pKey = (PrivateKey) ks.getKey(account.getCertSigner(), account.getCertPassword().toCharArray());
-			pCertificate = (X509Certificate) ks.getCertificate(account.getCertSigner());
+			pKey = (PrivateKey) ks.getKey(certSigner, certPassword.toCharArray());
+			pCertificate = (X509Certificate) ks.getCertificate(certSigner);
 			SignerDN = pCertificate.getSubjectDN().toString();
 
 			// Create a list of Certificates to include in the final CMS

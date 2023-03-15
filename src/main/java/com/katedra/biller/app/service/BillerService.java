@@ -4,7 +4,7 @@ import com.katedra.biller.app.client.gen.*;
 import com.katedra.biller.app.dto.*;
 import com.katedra.biller.app.entity.AccountEntity;
 import com.katedra.biller.app.entity.BillEntity;
-import com.katedra.biller.app.model.TicketAccess;
+import com.katedra.biller.app.entity.SessionEntity;
 import com.katedra.biller.app.repository.BillRepository;
 import com.katedra.biller.app.utils.PDFGenerator;
 import org.slf4j.Logger;
@@ -23,31 +23,17 @@ import java.util.List;
 public class BillerService {
 
     private static final Logger logger = LoggerFactory.getLogger(BillerService.class);
+    private static final String APROBADO = "A";
+    private static final String RECHAZADO = "R";
+    private static final String PARCIAL = "P";
+    private final BillRepository billRepository;
     private final AfipWSAAService wsaaService;
     private final AfipWSFEService wsfeService;
     private final AccountService accountService;
-    private final BillRepository billRepository;
-
+    private final SessionService sessionService;
     SimpleDateFormat dateFormat;
     SimpleDateFormat dateTimeFormat;
     SimpleDateFormat dateTimeZoneFormat;
-
-    public BillerService(AfipWSAAService wsaaService, AfipWSFEService wsfeService, AccountService accountService,
-                         BillRepository billRepository) {
-        this.wsaaService = wsaaService;
-        this.wsfeService = wsfeService;
-        this.accountService = accountService;
-        this.billRepository = billRepository;
-
-        this.dateFormat = new SimpleDateFormat("yyyyMMdd");
-        this.dateTimeFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-        this.dateTimeZoneFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-    }
-
-    @Value("${afip.billing.concepto}")
-    private int concepto;
-    @Value("${afip.billing.cbteTipo}")
-    private int cbteTipo;
     @Value("${afip.billing.docTipo}")
     private int docTipo;
     @Value("${afip.billing.impTotConc}")
@@ -63,47 +49,63 @@ public class BillerService {
     @Value("${afip.fe.qr.url}")
     private String qrUrl;
 
-    private static final String APROBADO = "A";
-    private static final String RECHAZADO = "R";
-    private static final String PARCIAL = "P";
+    public BillerService(AfipWSAAService wsaaService, AfipWSFEService wsfeService, AccountService accountService,
+                         BillRepository billRepository, SessionService sessionService) {
+        this.billRepository = billRepository;
+        this.wsaaService = wsaaService;
+        this.wsfeService = wsfeService;
+        this.accountService = accountService;
+        this.sessionService = sessionService;
+
+        this.dateFormat = new SimpleDateFormat("yyyyMMdd");
+        this.dateTimeFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+        this.dateTimeZoneFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+    }
 
     public BillProcess create(BillingPayload billingPayload) throws Exception {
-        AccountEntity account = accountService.findByCuit(billingPayload.getCuit());
-        FECAESolicitarResponse fecaeSolicitarResponse = wsfeService.generateBill(
-                getFEAuthRequest(account), buildBillRequest(billingPayload, account));
-        return saveBills(account, fecaeSolicitarResponse.getFECAESolicitarResult(), billingPayload);
+        SessionEntity session = sessionService.getSession(billingPayload.getCuit());
+        int ultCbteAutorizado =
+                wsfeService.getUltimoComprobanteAutorizado(getFEAuthRequest(session),
+                        session.getAccount().getPuntoVenta(), session.getAccount().getTipoFactura()).getFECompUltimoAutorizadoResult().getCbteNro();
+
+        FECAESolicitarResponse fecaeSolicitarResponse =
+                wsfeService.generateBill(getFEAuthRequest(session), buildBillRequest(billingPayload,
+                        session.getAccount(), ultCbteAutorizado));
+
+        return saveBills(session.getAccount(), fecaeSolicitarResponse.getFECAESolicitarResult(), billingPayload);
     }
 
     public FECompUltimoAutorizadoResponse getUltimoComprobanteAutorizado(Long cuit) throws Exception {
-        AccountEntity account = accountService.findByCuit(cuit);
-        return wsfeService.getUltimoComprobanteAutorizado(
-                getFEAuthRequest(account), account.getPuntoVenta(), cbteTipo);
+        SessionEntity session = sessionService.getSession(cuit);
+        return wsfeService.getUltimoComprobanteAutorizado(getFEAuthRequest(session),
+                session.getAccount().getPuntoVenta(), session.getAccount().getTipoFactura());
     }
 
     public FEParamGetPtosVentaResponse getPuntosVenta(Long cuit) throws Exception {
-        AccountEntity account = accountService.findByCuit(cuit);
-        return wsfeService.getPuntosVenta(getFEAuthRequest(account));
-    }
-
-    public FECompConsultarResponse getBillInfo(AccountEntity account, Long numComprobante) throws Exception {
-        FECompConsultaReq feCompConsultaReq = new FECompConsultaReq();
-        feCompConsultaReq.setCbteNro(numComprobante);
-        feCompConsultaReq.setPtoVta(account.getPuntoVenta());
-        feCompConsultaReq.setCbteTipo(cbteTipo);
-        return wsfeService.getBill(getFEAuthRequest(account), feCompConsultaReq);
+        SessionEntity session = sessionService.getSession(cuit);
+        return wsfeService.getPuntosVenta(getFEAuthRequest(session));
     }
 
     public FECompConsultarResponse getBillInfo(Long cuit, Long numComprobante) throws Exception {
-        AccountEntity account = accountService.findByCuit(cuit);
-        return getBillInfo(account, numComprobante);
+        SessionEntity session = sessionService.getSession(cuit);
+        return getBillInfo(session, numComprobante);
+    }
+
+    public FECompConsultarResponse getBillInfo(SessionEntity session, Long numComprobante) throws Exception {
+        FECompConsultaReq feCompConsultaReq = new FECompConsultaReq();
+        feCompConsultaReq.setCbteNro(numComprobante);
+        feCompConsultaReq.setPtoVta(session.getAccount().getPuntoVenta());
+        feCompConsultaReq.setCbteTipo(session.getAccount().getTipoFactura());
+        return wsfeService.getBill(getFEAuthRequest(session), feCompConsultaReq);
     }
 
     public ByteArrayInputStream buildFile(BillDTO billDTO) throws Exception {
+        FECompConsultarResponse comprobante = getBillInfo(billDTO.getCuit(), billDTO.getNumComprobante());
         AccountEntity account = accountService.findByCuit(billDTO.getCuit());
-        FECompConsultarResponse comprobante = getBillInfo(account, billDTO.getNumComprobante());
 
         if (comprobante.getFECompConsultarResult().getResultGet() != null) {
-            ByteArrayInputStream pdf = PDFGenerator.generate(account, billDTO, comprobante.getFECompConsultarResult().getResultGet(), qrUrl);
+            ByteArrayInputStream pdf =
+                    PDFGenerator.generate(account, billDTO, comprobante.getFECompConsultarResult().getResultGet(), qrUrl);
             logger.info("Invoice PDF generated");
             return pdf;
         } else {
@@ -116,8 +118,7 @@ public class BillerService {
 
     public String getPDFFileName(BillDTO billDTO) {
         AccountEntity account = accountService.findByCuit(billDTO.getCuit());
-        return billDTO.getCuit().toString().concat(account.getPuntoVenta().toString())
-                .concat(billDTO.getNumComprobante().toString()).concat(".pdf");
+        return billDTO.getCuit().toString().concat(account.getPuntoVenta().toString()).concat(billDTO.getNumComprobante().toString()).concat(".pdf");
     }
 
     public BanlanceDTO getTotalBills(Long cuit, String sinceStr, String toStr) throws Exception {
@@ -132,7 +133,7 @@ public class BillerService {
             throw new Exception("El formato de las fechas es invalido");
         }
 
-        List<BillEntity> bills = billRepository.findBillsByCuitBetweenDates(cuit,since,to);
+        List<BillEntity> bills = billRepository.findBillsByCuitBetweenDates(cuit, since, to);
 
         BanlanceDTO res = new BanlanceDTO();
         res.setCuit(cuit);
@@ -151,7 +152,8 @@ public class BillerService {
                     BillDetailDTO billItem = billingPayload.getDetails().get(i);
                     saveBill(item, res.getFeCabResp().getFchProceso(), account, billItem);
 
-                    BillProcessDetail detail = new BillProcessDetail(billItem.getVentaId(),item.getCbteDesde(), item.getCAE(), null);
+                    BillProcessDetail detail =
+                            new BillProcessDetail(billItem.getVentaId(), item.getCbteDesde(), item.getCAE(), null);
                     billProcess.addDetail(detail);
                 }
                 break;
@@ -171,7 +173,8 @@ public class BillerService {
                     if (APROBADO.equals(item.getResultado())) {
                         saveBill(item, res.getFeCabResp().getFchProceso(), account, billItem);
 
-                        BillProcessDetail detail = new BillProcessDetail(billItem.getVentaId(),item.getCbteDesde(), item.getCAE(), null);
+                        BillProcessDetail detail =
+                                new BillProcessDetail(billItem.getVentaId(), item.getCbteDesde(), item.getCAE(), null);
                         billProcess.addDetail(detail);
                     } else {
                         billingError(billProcess, item, billItem);
@@ -179,15 +182,14 @@ public class BillerService {
                 }
                 break;
         }
-        billProcess.setError(buildErrorMessage(res.getErrors() != null? res.getErrors().getErr(): null));
+        billProcess.setError(buildErrorMessage(res.getErrors() != null ? res.getErrors().getErr() : null));
         return billProcess;
     }
 
     private void billingError(BillProcess billProcess, FECAEDetResponse item, BillDetailDTO billItem) {
-        String errorMsg = item.getObservaciones() != null? buildItemErrorMessage(item.getObservaciones().getObs()): null;
-        logger.error("Venta ".concat(billItem.getVentaId().toString()).concat(" - Estado: ")
-                .concat(item.getResultado()).concat(" - Mensaje: ")
-                .concat(errorMsg == null? "" : errorMsg));
+        String errorMsg =
+                item.getObservaciones() != null ? buildItemErrorMessage(item.getObservaciones().getObs()) : null;
+        logger.error("Venta ".concat(billItem.getVentaId().toString()).concat(" - Estado: ").concat(item.getResultado()).concat(" - Mensaje: ").concat(errorMsg == null ? "" : errorMsg));
 
         BillProcessDetail detail = new BillProcessDetail(billItem.getVentaId(), null, null, errorMsg);
         billProcess.addDetail(detail);
@@ -206,7 +208,7 @@ public class BillerService {
         bill.setAccount(account);
 
         try {
-            FECompConsultarResponse comprobante = getBillInfo(account, bill.getNumComprobante());
+            FECompConsultarResponse comprobante = getBillInfo(account.getCuit(), bill.getNumComprobante());
             bill.setImporte(comprobante.getFECompConsultarResult().getResultGet().getImpTotal());
         } catch (Exception e) {
             logger.error("No se pudo consultar la informacion de la Factura nro: ".concat(bill.getNumComprobante().toString()));
@@ -214,16 +216,13 @@ public class BillerService {
         }
 
         billRepository.save(bill);
-        logger.info("Venta Nro: ".concat(billItem.getVentaId().toString()).concat(" - CUIT del facturador: ")
-                .concat(account.getCuit().toString()).concat(" - Se generó con éxito la Factura Nro: ")
-                .concat(bill.getNumComprobante().toString()).concat(" con CAE ").concat(bill.getCae()));
+        logger.info("Venta Nro: ".concat(billItem.getVentaId().toString()).concat(" - CUIT del facturador: ").concat(account.getCuit().toString()).concat(" - Se generó con éxito la Factura Nro: ").concat(bill.getNumComprobante().toString()).concat(" con CAE ").concat(bill.getCae()));
     }
 
     private String buildItemErrorMessage(List<Obs> obs) {
         if (obs != null) {
             StringBuilder errorMessages = new StringBuilder();
-            obs.forEach(ob -> errorMessages.append(String.valueOf(
-                    ob.getCode()).concat(" - ").concat(ob.getMsg()).concat("\n")));
+            obs.forEach(ob -> errorMessages.append(String.valueOf(ob.getCode()).concat(" - ").concat(ob.getMsg()).concat("\n")));
             return errorMessages.toString();
         } else {
             return null;
@@ -243,17 +242,16 @@ public class BillerService {
     /**
      * Devuelve una Autenticacion valida para usar el servicio de Facturacion Electronica
      *
-     * @param account
+     * @param session
      * @return FEAuthRequest
      * @throws Exception
      */
-    private FEAuthRequest getFEAuthRequest(AccountEntity account) throws Exception {
-        if (account.getExpirationTime() == null) {
-            TicketAccess ta = wsaaService.authenticate(account);
-            account = accountService.updateSession(account, ta);
+    private FEAuthRequest getFEAuthRequest(SessionEntity session) throws Exception {
+        if (session.getExpirationTime() == null) {
+            wsaaService.authenticate(session);
+            sessionService.updateSession(session);
         } else {
-
-            Date expirationTime = dateTimeZoneFormat.parse(account.getExpirationTime());
+            Date expirationTime = dateTimeZoneFormat.parse(session.getExpirationTime());
             Date currentDateTime = new Date();
 
             Calendar calendar = Calendar.getInstance();
@@ -263,44 +261,42 @@ public class BillerService {
 
             if (expirationTime.compareTo(currentDateTime) < 0) {
                 logger.info("Sesion vencida. Se obtiene una nueva");
-                TicketAccess ta = wsaaService.authenticate(account);
-                account = accountService.updateSession(account, ta);
+                wsaaService.authenticate(session);
+                sessionService.updateSession(session);
             } else if (expirationTimeLimit.compareTo(currentDateTime) < 0) {
                 logger.info("La sesion vence en menos de 10 minutos. Se obtiene una nueva");
-                TicketAccess ta = wsaaService.authenticate(account);
-                account = accountService.updateSession(account, ta);
+                wsaaService.authenticate(session);
+                sessionService.updateSession(session);
+            } else {
+                logger.info("Sesion valida");
             }
         }
         FEAuthRequest authRequest = new FEAuthRequest();
-        authRequest.setCuit(account.getCuit());
-        authRequest.setToken(account.getToken());
-        authRequest.setSign(account.getSign());
+        authRequest.setCuit(session.getAccount().getCuit());
+        authRequest.setToken(session.getToken());
+        authRequest.setSign(session.getSign());
 
         return authRequest;
     }
 
-    private FECAERequest buildBillRequest(BillingPayload billingPayload, AccountEntity account) throws Exception {
-        FECAERequest fecaeRequest = new FECAERequest();
+    private FECAERequest buildBillRequest(BillingPayload billingPayload, AccountEntity account, int ultCbteAutorizado) throws Exception {
 
         ArrayOfFECAEDetRequest arrayOfFECAEDetRequest = new ArrayOfFECAEDetRequest();
         List<FECAEDetRequest> fecaeDetRequests = arrayOfFECAEDetRequest.getFECAEDetRequest();
 
-        int ultimoComprobanteAutorizado = wsfeService
-                .getUltimoComprobanteAutorizado(
-                        getFEAuthRequest(account), account.getPuntoVenta(), cbteTipo)
-                .getFECompUltimoAutorizadoResult().getCbteNro();
-
         for (BillDetailDTO detail : billingPayload.getDetails()) {
-            FECAEDetRequest detRequest = buildDetails(detail, account.getPuntoVenta(), ++ultimoComprobanteAutorizado);
+            FECAEDetRequest detRequest =
+                    buildDetails(detail, account.getConcepto(), account.getPuntoVenta(), ++ultCbteAutorizado);
             fecaeDetRequests.add(detRequest);
         }
 
+        FECAERequest fecaeRequest = new FECAERequest();
         fecaeRequest.setFeDetReq(arrayOfFECAEDetRequest);
-        fecaeRequest.setFeCabReq(buildHeader(account.getPuntoVenta(), fecaeDetRequests.size()));
+        fecaeRequest.setFeCabReq(buildHeader(account.getPuntoVenta(), account.getTipoFactura(), fecaeDetRequests.size()));
         return fecaeRequest;
     }
 
-    private FECAECabRequest buildHeader(int ptoVenta, int cantReg) {
+    private FECAECabRequest buildHeader(int ptoVenta, int cbteTipo, int cantReg) {
         FECAECabRequest fecaeCabRequest = new FECAECabRequest();
         fecaeCabRequest.setPtoVta(ptoVenta); // Punto de venta 2
         fecaeCabRequest.setCbteTipo(cbteTipo); // cbteTipo = 11 = Factura C - Monotributo
@@ -308,7 +304,7 @@ public class BillerService {
         return fecaeCabRequest;
     }
 
-    private FECAEDetRequest buildDetails(BillDetailDTO detail, int ptoVenta, int numComprobante) throws Exception {
+    private FECAEDetRequest buildDetails(BillDetailDTO detail, int concepto, int ptoVenta, int numComprobante) throws Exception {
         // Generate Details
         FECAEDetRequest feCAEDetRequest = new FECAEDetRequest();
         feCAEDetRequest.setConcepto(concepto); // Productos y servicios = 3

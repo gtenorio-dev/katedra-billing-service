@@ -1,5 +1,6 @@
 package com.katedra.biller.app.controller;
 
+import com.katedra.biller.app.dto.AccountPayload;
 import com.katedra.biller.app.entity.AccountEntity;
 import com.katedra.biller.app.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ public class AccountController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity createAccount(@RequestBody AccountEntity account) {
+    public ResponseEntity createAccount(@RequestBody AccountPayload account) {
         accountService.createAccount(account);
         return new ResponseEntity(HttpStatus.CREATED);
     }
