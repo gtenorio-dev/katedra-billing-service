@@ -1,4 +1,4 @@
-package com.katedra.biller.app.dto;
+package com.katedra.biller.app.payload;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

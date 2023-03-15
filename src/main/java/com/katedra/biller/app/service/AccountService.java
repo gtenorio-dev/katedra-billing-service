@@ -1,16 +1,11 @@
 package com.katedra.biller.app.service;
 
-import com.katedra.biller.app.dto.AccountPayload;
+import com.katedra.biller.app.payload.AccountPayload;
 import com.katedra.biller.app.entity.AccountEntity;
-import com.katedra.biller.app.entity.SessionEntity;
-import com.katedra.biller.app.model.TicketAccess;
 import com.katedra.biller.app.repository.AccountRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.mail.Session;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class AccountService {

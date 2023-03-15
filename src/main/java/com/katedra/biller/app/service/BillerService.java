@@ -5,6 +5,7 @@ import com.katedra.biller.app.dto.*;
 import com.katedra.biller.app.entity.AccountEntity;
 import com.katedra.biller.app.entity.BillEntity;
 import com.katedra.biller.app.entity.SessionEntity;
+import com.katedra.biller.app.payload.BillingPayload;
 import com.katedra.biller.app.repository.BillRepository;
 import com.katedra.biller.app.utils.PDFGenerator;
 import org.slf4j.Logger;

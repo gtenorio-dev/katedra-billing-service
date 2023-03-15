@@ -1,6 +1,6 @@
 package com.katedra.biller.app.service;
 
-import com.katedra.biller.app.dto.AccountPayload;
+import com.katedra.biller.app.payload.AccountPayload;
 import com.katedra.biller.app.entity.AccountEntity;
 import com.katedra.biller.app.entity.SessionEntity;
 import com.katedra.biller.app.repository.SessionRepository;

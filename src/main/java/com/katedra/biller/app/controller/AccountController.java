@@ -1,6 +1,6 @@
 package com.katedra.biller.app.controller;
 
-import com.katedra.biller.app.dto.AccountPayload;
+import com.katedra.biller.app.payload.AccountPayload;
 import com.katedra.biller.app.entity.AccountEntity;
 import com.katedra.biller.app.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;

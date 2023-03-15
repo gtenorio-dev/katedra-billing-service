@@ -13,7 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.katedra.biller.app.dto.BillingPayload;
+import com.katedra.biller.app.payload.BillingPayload;
 import com.katedra.biller.app.service.BillerService;
 
 import java.io.ByteArrayInputStream;
