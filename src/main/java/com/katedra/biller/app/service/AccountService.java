@@ -29,6 +29,7 @@ public class AccountService {
         account.setCondicionDeVenta(accountPayload.getCondicionDeVenta());
         account.setCondicionFrenteAlIva(accountPayload.getCondicionFrenteAlIva());
         account.setActivo(accountPayload.getActivo());
+        account.setLimite(accountPayload.getLimite());
         account = accountRepository.save(account);
         sessionService.createSession(account, accountPayload);
     }

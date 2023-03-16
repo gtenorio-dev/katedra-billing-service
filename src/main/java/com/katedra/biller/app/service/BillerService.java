@@ -65,9 +65,10 @@ public class BillerService {
 
     public BillProcess create(BillingPayload billingPayload) throws Exception {
         SessionEntity session = sessionService.getSession(billingPayload.getCuit());
-        int ultCbteAutorizado =
-                wsfeService.getUltimoComprobanteAutorizado(getFEAuthRequest(session),
-                        session.getAccount().getPuntoVenta(), session.getAccount().getTipoFactura()).getFECompUltimoAutorizadoResult().getCbteNro();
+        validateAccountLimits(session.getAccount(), billingPayload);
+        int ultCbteAutorizado = wsfeService.getUltimoComprobanteAutorizado(getFEAuthRequest(session),
+                session.getAccount().getPuntoVenta(), session.getAccount().getTipoFactura())
+                .getFECompUltimoAutorizadoResult().getCbteNro();
 
         FECAESolicitarResponse fecaeSolicitarResponse =
                 wsfeService.generateBill(getFEAuthRequest(session), buildBillRequest(billingPayload,
@@ -134,6 +135,10 @@ public class BillerService {
             throw new Exception("El formato de las fechas es invalido");
         }
 
+        return getTotalBills(cuit, since, to);
+    }
+
+    public BanlanceDTO getTotalBills(Long cuit, Date since, Date to) throws Exception {
         List<BillEntity> bills = billRepository.findBillsByCuitBetweenDates(cuit, since, to);
 
         BanlanceDTO res = new BanlanceDTO();
@@ -210,7 +215,9 @@ public class BillerService {
 
         try {
             FECompConsultarResponse comprobante = getBillInfo(account.getCuit(), bill.getNumComprobante());
-            bill.setImporte(comprobante.getFECompConsultarResult().getResultGet().getImpTotal());
+            FECompConsResponse resultGet = comprobante.getFECompConsultarResult().getResultGet();
+            bill.setFechaServicioDesde(dateFormat.parse(resultGet.getFchServDesde()));
+            bill.setImporte(resultGet.getImpTotal());
         } catch (Exception e) {
             logger.error("No se pudo consultar la informacion de la Factura nro: ".concat(bill.getNumComprobante().toString()));
             bill.setImporte(billItem.getImporte());
@@ -331,6 +338,25 @@ public class BillerService {
         feCAEDetRequest.setMonCotiz(monCotiz); // Para ARS = 1
 
         return feCAEDetRequest;
+    }
+
+
+    private void validateAccountLimits(AccountEntity account, BillingPayload billingPayload) throws Exception{
+        Date date = new Date();
+        Date currentMonthFisrtDay = new Date(date.getYear(), date.getMonth(), 1);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(currentMonthFisrtDay);
+        calendar.add(Calendar.MONTH, 1);
+        calendar.add(Calendar.DAY_OF_MONTH, -1);
+        Date  currentMonthLastDay = calendar.getTime();
+
+        double totalBilled = getTotalBills(account.getCuit(), currentMonthFisrtDay, currentMonthLastDay).getFacturado();
+        double totalToBill = billingPayload.getDetails().stream().mapToDouble(BillDetailDTO::getImporte).sum();
+
+        // TODO 400 BadRequest
+        if (totalBilled + totalToBill > account.getLimite()) throw new Exception("No se puede facturar porque se va " +
+                "asuperar el limite de $".concat(account.getLimite().toString()));
     }
 
 }

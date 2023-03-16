@@ -36,8 +36,11 @@ public class AccountEntity {
     private String condicionDeVenta;
     @Column(name = "condicion_frente_al_iva", nullable = false)
     private String condicionFrenteAlIva;
-    @Column(name = "activo", nullable = false)
+    @Column(nullable = false)
     private Boolean activo;
-
+    @Column(nullable = false)
+    private Double limite;
+    @Column(name = "limite_anterior")
+    private Double limiteAnterior;
 
 }

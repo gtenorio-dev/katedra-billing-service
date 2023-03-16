@@ -13,7 +13,7 @@ import java.util.List;
 public interface BillRepository extends CrudRepository<BillEntity, Long> {
 
     // TODO revisar si es que sede filtrar por fechaComprobante o por fechaServicioDesde
-    @Query("SELECT b FROM BillEntity b WHERE b.account.cuit = :cuit AND b.fechaComprobante >= :since AND b.fechaComprobante <= :to")
+    @Query("SELECT b FROM BillEntity b WHERE b.account.cuit = :cuit AND b.fechaServicioDesde >= :since AND b.fechaServicioDesde <= :to")
     List<BillEntity> findBillsByCuitBetweenDates(
             @Param("cuit") Long cuit,
             @Param("since") Date since,

@@ -31,7 +31,9 @@ public class BillEntity {
     @Temporal(TemporalType.DATE)
     private Date fechaComprobante; // yyyymmdd
 
-    // TODO private Date fechaServicioDesde
+    @Column(name = "fecha_servicio_desde")
+    @Temporal(TemporalType.DATE)
+    private Date fechaServicioDesde;
 
     private Long dni; // Del comprador
 

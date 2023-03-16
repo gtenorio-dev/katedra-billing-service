@@ -23,5 +23,6 @@ public class AccountPayload {
     private String certSigner;
     private String certPassword;
     private Boolean activo;
+    private Double limite;
 
 }
